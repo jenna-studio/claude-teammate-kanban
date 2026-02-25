@@ -1,0 +1,30 @@
+{
+  "name": "@agent-track/mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for agent activity tracking and instrumentation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "agent-track-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "keywords": ["mcp", "agent", "instrumentation"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@agent-track/shared": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "better-sqlite3": "^11.7.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,76 @@
+/**
+ * App Component
+ * Root application component with routing and error boundary
+ */
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BoardView } from '@/routes/BoardView';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { useBoard } from '@/hooks/useBoard';
+
+/**
+ * Main application component
+ */
+const App: React.FC = () => {
+  const { boards, loading, fetchBoards } = useBoard(null);
+
+  useEffect(() => {
+    fetchBoards();
+  }, [fetchBoards]);
+
+  if (loading && boards.length === 0) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" message="Loading dashboard..." />
+      </div>
+    );
+  }
+
+  // Get the first board as default, or use a hardcoded ID
+  const defaultBoardId = boards[0]?.id || 'main-board';
+
+  return (
+    <ErrorBoundary>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Navigate to={`/board/${defaultBoardId}`} replace />} />
+          <Route path="/board/:boardId" element={<BoardViewWrapper />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+    </ErrorBoundary>
+  );
+};
+
+/**
+ * Wrapper component to extract boardId from route params
+ */
+const BoardViewWrapper: React.FC = () => {
+  const pathSegments = window.location.pathname.split('/');
+  const boardId = pathSegments[pathSegments.length - 1] || 'main-board';
+
+  return <BoardView boardId={boardId} />;
+};
+
+/**
+ * 404 Not Found page
+ */
+const NotFound: React.FC = () => {
+  return (
+    <div className="h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-2">404</h1>
+        <p className="text-muted-foreground mb-4">Page not found</p>
+        <a
+          href="/"
+          className="text-primary hover:underline"
+        >
+          Go back home
+        </a>
+      </div>
+    </div>
+  );
+};
+
+export default App;
