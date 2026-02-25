@@ -24,7 +24,10 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, className }) => {
   const statusColors = getAgentStatusColor(agent.status);
 
   return (
-    <Card className={cn('hover:shadow-md transition-all hover:-translate-y-0.5 bg-white/80 backdrop-blur-sm border-white/60', className)}>
+    <Card
+      className={cn('hover:shadow-md transition-all hover:-translate-y-0.5 backdrop-blur-sm border-white/60', className)}
+      style={{ background: 'linear-gradient(135deg, #FF7BA512, #9B6ED812, #52C4E812)' }}
+    >
       <CardContent className="p-4">
         {/* Agent Header */}
         <div className="flex items-start gap-3 mb-3">

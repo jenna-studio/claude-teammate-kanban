@@ -1,9 +1,9 @@
 /**
  * TaskDetailModal Component
- * Displays detailed information about a task
+ * Displays detailed information about a task including code changes and comments
  */
-import React from 'react';
-import { FileCode, Clock, AlertCircle, CheckCircle } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { FileCode, Clock, AlertCircle, CheckCircle, GitCommit, MessageSquare } from 'lucide-react';
 import { ClaudeIcon } from '@/components/icons/ClaudeIcon';
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { CodeDiffViewer } from './CodeDiffViewer';
 import { useTaskStore } from '@/stores/taskStore';
 import { useUIStore } from '@/stores/uiStore';
 import { formatDateTime, formatDurationSeconds } from '@/utils/date';
@@ -24,10 +25,17 @@ import { cn } from '@/utils/cn';
  * TaskDetailModal shows comprehensive task information
  */
 export const TaskDetailModal: React.FC = () => {
-  const { selectedTaskId, getTask } = useTaskStore();
+  const { selectedTaskId, getTask, fetchTaskDetails, taskDetailLoading, taskComments } = useTaskStore();
   const { taskModalOpen, closeTaskModal } = useUIStore();
 
   const task = selectedTaskId ? getTask(selectedTaskId) : null;
+
+  // Fetch full task details (with code changes + comments) when modal opens
+  useEffect(() => {
+    if (taskModalOpen && selectedTaskId) {
+      fetchTaskDetails(selectedTaskId);
+    }
+  }, [taskModalOpen, selectedTaskId, fetchTaskDetails]);
 
   if (!task) return null;
 
@@ -36,7 +44,7 @@ export const TaskDetailModal: React.FC = () => {
 
   return (
     <Dialog open={taskModalOpen} onOpenChange={closeTaskModal}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-8">
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
@@ -55,6 +63,14 @@ export const TaskDetailModal: React.FC = () => {
             </div>
           </div>
         </DialogHeader>
+
+        {/* Loading indicator for detail fetch */}
+        {taskDetailLoading && (
+          <div className="flex items-center justify-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mr-3" />
+            <span className="text-sm text-muted-foreground">Loading details...</span>
+          </div>
+        )}
 
         <div className="space-y-6 mt-6">
           {/* Description */}
@@ -119,6 +135,19 @@ export const TaskDetailModal: React.FC = () => {
             </div>
           </div>
 
+          {/* Commit Hash */}
+          {task.commitHash && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <GitCommit className="w-4 h-4 text-muted-foreground" />
+                <h4 className="font-semibold">Commit</h4>
+              </div>
+              <code className="text-sm font-mono bg-muted px-3 py-1.5 rounded">
+                {task.commitHash}
+              </code>
+            </div>
+          )}
+
           {/* Files Modified */}
           {task.files && task.files.length > 0 && (
             <div>
@@ -139,24 +168,58 @@ export const TaskDetailModal: React.FC = () => {
             </div>
           )}
 
-          {/* Lines Changed */}
-          {task.linesChanged && (
+          {/* Diff Summary + Lines Changed */}
+          {(task.diffSummary || task.linesChanged) && (
             <div>
-              <h4 className="font-semibold mb-2">Code Changes</h4>
-              <div className="flex gap-4 text-sm">
-                <div className="flex items-center gap-1">
-                  <span className="text-emerald-500 font-semibold">
-                    +{task.linesChanged.added}
-                  </span>
-                  <span className="text-muted-foreground">additions</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-pink-500 font-semibold">
-                    -{task.linesChanged.removed}
-                  </span>
-                  <span className="text-muted-foreground">deletions</span>
-                </div>
+              <h4 className="font-semibold mb-2">Change Summary</h4>
+              <div className="flex gap-4 text-sm flex-wrap">
+                {task.diffSummary && (
+                  <div className="flex items-center gap-1">
+                    <FileCode className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="font-semibold">{task.diffSummary.filesChanged}</span>
+                    <span className="text-muted-foreground">file{task.diffSummary.filesChanged !== 1 ? 's' : ''} changed</span>
+                  </div>
+                )}
+                {task.diffSummary ? (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <span className="text-emerald-500 font-semibold">
+                        +{task.diffSummary.insertions}
+                      </span>
+                      <span className="text-muted-foreground">additions</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-pink-500 font-semibold">
+                        -{task.diffSummary.deletions}
+                      </span>
+                      <span className="text-muted-foreground">deletions</span>
+                    </div>
+                  </>
+                ) : task.linesChanged && (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <span className="text-emerald-500 font-semibold">
+                        +{task.linesChanged.added}
+                      </span>
+                      <span className="text-muted-foreground">additions</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-pink-500 font-semibold">
+                        -{task.linesChanged.removed}
+                      </span>
+                      <span className="text-muted-foreground">deletions</span>
+                    </div>
+                  </>
+                )}
               </div>
+            </div>
+          )}
+
+          {/* Code Changes (Diff Viewer) */}
+          {task.codeChanges && task.codeChanges.length > 0 && (
+            <div>
+              <h4 className="font-semibold mb-3">Code Changes</h4>
+              <CodeDiffViewer codeChanges={task.codeChanges} />
             </div>
           )}
 
@@ -199,6 +262,39 @@ export const TaskDetailModal: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Comments */}
+          {taskComments && taskComments.length > 0 && (
+            <div className="pt-4 border-t">
+              <div className="flex items-center gap-2 mb-3">
+                <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                <h4 className="font-semibold">Comments ({taskComments.length})</h4>
+              </div>
+              <div className="space-y-3">
+                {taskComments.map((comment) => (
+                  <div key={comment.id} className="bg-muted/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      {comment.authorType === 'agent' ? (
+                        <ClaudeIcon size={14} color="#9B6ED8" />
+                      ) : (
+                        <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+                      )}
+                      <span className="text-sm font-medium">{comment.author}</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {comment.authorType}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        {formatDateTime(comment.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap pl-5">
+                      {comment.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Blocked By */}
           {task.blockedBy && task.blockedBy.length > 0 && (

@@ -46,25 +46,26 @@ export const BoardView: React.FC<BoardViewProps> = ({ boardId }) => {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Agent Sidebar */}
-        {sidebarOpen && (
-          <aside
-            className={cn(
-              'w-80 border-r overflow-y-auto',
-              'flex flex-col'
-            )}
-            style={{ backgroundColor: 'hsl(300 30% 98%)' }}
-          >
+        <aside
+          className={cn(
+            'border-r overflow-hidden flex flex-col',
+            'transition-[width,opacity] duration-300 ease-in-out',
+            sidebarOpen ? 'w-80 opacity-100' : 'w-0 opacity-0 border-r-0'
+          )}
+          style={{ backgroundColor: 'hsl(300 30% 98%)' }}
+        >
+          <div className="w-80 flex flex-col h-full flex-shrink-0">
             <div className="p-4 border-b">
               <h2 className="font-semibold text-lg" style={{ color: '#9B6ED8' }}>Active Agents</h2>
               <p className="text-sm text-muted-foreground">
                 Monitoring agent activity
               </p>
             </div>
-            <div className="flex-1 p-4">
+            <div className="flex-1 p-4 overflow-y-auto">
               <AgentList showOnlyActive />
             </div>
-          </aside>
-        )}
+          </div>
+        </aside>
 
         {/* Kanban Board */}
         <main className="flex-1 overflow-hidden">

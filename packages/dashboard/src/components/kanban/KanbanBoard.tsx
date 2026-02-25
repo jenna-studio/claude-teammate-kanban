@@ -3,7 +3,7 @@
  * Main kanban board with drag and drop functionality
  */
 import React, { useEffect } from 'react';
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { KanbanColumn } from './KanbanColumn';
 import { TaskCard } from './TaskCard';
 import { useBoard } from '@/hooks/useBoard';
@@ -36,6 +36,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const { openTaskModal } = useUIStore();
 
   const [activeTask, setActiveTask] = React.useState<AgentTask | null>(null);
+
+  // Require 8px of movement before drag activates, so clicks work normally
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    })
+  );
 
   // Fetch board and tasks on mount
   useEffect(() => {
@@ -127,7 +134,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
       {/* Kanban Board */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
-        <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="flex gap-4 p-6 h-full">
             {columns.map((column) => {
               const columnTasks = tasks.filter(

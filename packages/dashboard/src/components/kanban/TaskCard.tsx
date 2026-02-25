@@ -37,10 +37,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       data: { type: 'task', task },
     });
 
-  const style = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-      }
+  const cardStyle = transform
+    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
     : undefined;
 
   const importanceColors = getImportanceColor(task.importance);
@@ -54,12 +52,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
   return (
     <Card
       ref={setNodeRef}
-      style={style}
+      style={cardStyle}
       {...listeners}
       {...attributes}
       onClick={handleClick}
       className={cn(
-        'cursor-grab active:cursor-grabbing p-4 transition-all',
+        'cursor-grab active:cursor-grabbing p-5 transition-all',
         'hover:shadow-md hover:-translate-y-0.5',
         'bg-white/80 backdrop-blur-sm border-white/60',
         isDragging && 'opacity-50 shadow-lg',
@@ -115,12 +113,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       )}
 
       {/* Timestamps */}
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-1">
         <Clock className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
         <span className="text-xs text-muted-foreground">
           {task.startedAt
-            ? formatRelativeTime(task.startedAt)
-            : formatRelativeTime(task.createdAt)}
+            ? `Started ${formatRelativeTime(task.startedAt)}`
+            : `Created ${formatRelativeTime(task.createdAt)}`}
+        </span>
+      </div>
+      <div className="flex items-center gap-2 mb-2 pl-5">
+        <span className="text-xs text-muted-foreground">
+          Updated {formatRelativeTime(task.updatedAt)}
         </span>
       </div>
 

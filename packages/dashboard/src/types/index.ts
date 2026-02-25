@@ -95,6 +95,11 @@ export interface AgentTask {
   // Error Handling
   errorMessage?: string;
   retryCount?: number;
+
+  // Code Changes
+  codeChanges?: CodeChange[];
+  commitHash?: string;
+  diffSummary?: DiffSummary;
 }
 
 /**
@@ -307,11 +312,21 @@ export interface FilterState {
  */
 export interface CodeChange {
   filePath: string;
-  oldContent?: string;
-  newContent?: string;
+  changeType: 'added' | 'modified' | 'deleted' | 'renamed';
+  oldPath?: string;
   diff: string;
-  linesAdded: number;
-  linesRemoved: number;
+  language?: string;
+  linesAdded?: number;
+  linesDeleted?: number;
+}
+
+/**
+ * Summary of code changes across multiple files
+ */
+export interface DiffSummary {
+  filesChanged: number;
+  insertions: number;
+  deletions: number;
 }
 
 /**

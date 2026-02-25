@@ -2,7 +2,8 @@
  * Task Store - Manages all task state using Zustand
  */
 import { create } from 'zustand';
-import type { AgentTask, TaskStatus } from '@/types';
+import type { AgentTask, TaskStatus, Comment } from '@/types';
+import { apiClient } from '@/services/api';
 
 interface TaskStore {
   /** All tasks in the application */
@@ -13,6 +14,12 @@ interface TaskStore {
 
   /** Loading state */
   loading: boolean;
+
+  /** Task detail loading state */
+  taskDetailLoading: boolean;
+
+  /** Comments for the selected task */
+  taskComments: Comment[];
 
   /** Error state */
   error: string | null;
@@ -56,6 +63,9 @@ interface TaskStore {
 
   /** Clear all tasks */
   clearTasks: () => void;
+
+  /** Fetch full task details (with code changes + comments) */
+  fetchTaskDetails: (taskId: string) => Promise<void>;
 }
 
 /**
@@ -66,6 +76,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   tasks: [],
   selectedTaskId: null,
   loading: false,
+  taskDetailLoading: false,
+  taskComments: [],
   error: null,
 
   setTasks: (tasks) => {
@@ -136,6 +148,27 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   clearTasks: () => {
-    set({ tasks: [], selectedTaskId: null, error: null });
+    set({ tasks: [], selectedTaskId: null, error: null, taskComments: [] });
+  },
+
+  fetchTaskDetails: async (taskId) => {
+    set({ taskDetailLoading: true });
+    try {
+      const [taskDetail, comments] = await Promise.all([
+        apiClient.getTask(taskId),
+        apiClient.getComments(taskId),
+      ]);
+
+      set((state) => ({
+        tasks: state.tasks.map((t) =>
+          t.id === taskId ? { ...t, ...taskDetail } : t
+        ),
+        taskComments: comments,
+        taskDetailLoading: false,
+      }));
+    } catch (err) {
+      console.error('Failed to fetch task details:', err);
+      set({ taskDetailLoading: false });
+    }
   },
 }));
