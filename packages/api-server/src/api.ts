@@ -6,7 +6,7 @@
 import express, { Express } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import { boardRoutes, taskRoutes, agentRoutes } from './routes/index.js';
+import { boardRoutes, taskRoutes, agentRoutes, notifyRoutes } from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/index.js';
 
 /**
@@ -82,6 +82,9 @@ export function createApiServer(config: ApiServerConfig): Express {
 
   // Agent routes
   app.use(`${apiPrefix}/agents`, agentRoutes);
+
+  // Notification routes (for MCP server bridge)
+  app.use(`${apiPrefix}/notify`, notifyRoutes);
 
   // API root
   app.get(apiPrefix, (_req, res) => {

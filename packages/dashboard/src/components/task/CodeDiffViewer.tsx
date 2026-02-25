@@ -27,6 +27,17 @@ const DiffBlock: React.FC<{ change: CodeChange }> = ({ change }) => {
 
   const diffLines = change.diff ? change.diff.split('\n') : [];
 
+  // For added/deleted files, extract clean content lines (strip diff metadata and prefixes)
+  const isFullFile = change.changeType === 'added' || change.changeType === 'deleted';
+  const contentLines = isFullFile
+    ? diffLines
+        .filter((line) => !line.startsWith('+++') && !line.startsWith('---') && !line.startsWith('@@'))
+        .map((line) => {
+          if (line.startsWith('+') || line.startsWith('-')) return line.slice(1);
+          return line;
+        })
+    : [];
+
   return (
     <div className="border rounded-lg overflow-hidden bg-white/60">
       {/* File Header */}
@@ -57,8 +68,39 @@ const DiffBlock: React.FC<{ change: CodeChange }> = ({ change }) => {
         )}
       </button>
 
-      {/* Diff Content */}
-      {expanded && diffLines.length > 0 && (
+      {/* Clean File Content (for added/deleted files) */}
+      {expanded && isFullFile && contentLines.length > 0 && (
+        <div className="border-t overflow-x-auto">
+          <div
+            className="px-3 py-2 text-xs font-medium"
+            style={{
+              backgroundColor: change.changeType === 'added' ? '#ecfdf5' : '#fdf2f8',
+              color: change.changeType === 'added' ? '#065f46' : '#9d174d',
+            }}
+          >
+            {change.changeType === 'added' ? 'File content' : 'Deleted content'}
+          </div>
+          <pre className="text-xs leading-5">
+            {contentLines.map((line, i) => (
+              <div
+                key={i}
+                className={cn(
+                  'px-3 py-0',
+                  change.changeType === 'added' ? 'bg-emerald-50 text-emerald-800' : 'bg-pink-50 text-pink-800'
+                )}
+              >
+                <span className="text-muted-foreground/50 select-none inline-block w-8 text-right mr-3">
+                  {i + 1}
+                </span>
+                {line}
+              </div>
+            ))}
+          </pre>
+        </div>
+      )}
+
+      {/* Diff Content (for modified/renamed files) */}
+      {expanded && !isFullFile && diffLines.length > 0 && (
         <div className="border-t overflow-x-auto">
           <pre className="text-xs leading-5">
             {diffLines.map((line, i) => {

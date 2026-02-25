@@ -57,10 +57,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       {...attributes}
       onClick={handleClick}
       className={cn(
-        'cursor-grab active:cursor-grabbing p-5 transition-all',
-        'hover:shadow-md hover:-translate-y-0.5',
+        'cursor-grab active:cursor-grabbing p-5 transition-all shadow-md',
+        'hover:shadow-lg hover:-translate-y-0.5',
         'bg-white/80 backdrop-blur-sm border-white/60',
-        isDragging && 'opacity-50 shadow-lg',
+        isDragging && 'opacity-50 shadow-xl',
         'select-none'
       )}
       role="button"

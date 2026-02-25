@@ -124,14 +124,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   return (
     <div className={cn('h-full flex flex-col', className)}>
-      {/* Board Header */}
-      <header className="border-b p-6 bg-white/50 backdrop-blur-sm">
-        <h1 className="text-2xl font-bold">{currentBoard.name}</h1>
-        {currentBoard.description && (
-          <p className="text-muted-foreground mt-1">{currentBoard.description}</p>
-        )}
-      </header>
-
       {/* Kanban Board */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>

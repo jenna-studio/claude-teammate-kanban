@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "agent-track": {
+      "command": "node",
+      "args": [
+        "./packages/mcp-server/dist/index.js"
+      ],
+      "env": {
+        "DATABASE_PATH": "./packages/api-server/data/kanban.db"
+      }
+    }
+  }
+}

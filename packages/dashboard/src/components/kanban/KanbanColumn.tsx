@@ -48,12 +48,17 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   return (
     <div
       className={cn(
-        'flex flex-col w-80 flex-shrink-0 rounded-xl',
-        'bg-white/60 backdrop-blur-sm',
+        'flex flex-col min-w-[280px] flex-1 rounded-xl',
+        'backdrop-blur-sm',
         isOver && 'ring-2 ring-primary shadow-lg',
         wipLimitReached && 'ring-2 ring-destructive'
       )}
-      style={{ boxShadow: `0 2px 12px ${palette.accent}18` }}
+      style={{
+        boxShadow: `0 2px 12px ${palette.accent}18`,
+        backgroundColor: `${palette.header}30`,
+        border: `1px solid ${palette.accent}25`,
+        '--column-accent': palette.accent,
+      } as React.CSSProperties}
     >
       {/* Column Header */}
       <div
@@ -100,7 +105,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       <div
         ref={setNodeRef}
         className={cn(
-          'flex-1 overflow-y-auto p-4 space-y-3',
+          'flex-1 overflow-y-auto p-4 space-y-3 column-scrollbar',
           'min-h-[200px] rounded-b-xl',
           isOver && 'bg-primary/5'
         )}

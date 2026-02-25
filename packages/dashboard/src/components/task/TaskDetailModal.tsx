@@ -42,9 +42,21 @@ export const TaskDetailModal: React.FC = () => {
   const importanceColors = getImportanceColor(task.importance);
   const statusColors = getStatusColor(task.status);
 
+  const columnAccents: Record<string, string> = {
+    todo: '#FF599E',
+    claimed: '#9B6ED8',
+    in_progress: '#00B9E9',
+    review: '#F7BD00',
+    done: '#00C148',
+  };
+  const overlayAccent = columnAccents[task.status] || '#9B6ED8';
+
   return (
     <Dialog open={taskModalOpen} onOpenChange={closeTaskModal}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-8">
+      <DialogContent
+        className="max-w-4xl max-h-[90vh] overflow-y-auto p-12"
+        overlayStyle={{ backgroundColor: `${overlayAccent}18`, backdropFilter: 'blur(8px)' }}
+      >
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
@@ -132,6 +144,9 @@ export const TaskDetailModal: React.FC = () => {
                   Completed: {formatDateTime(task.completedAt)}
                 </p>
               )}
+              <p className="text-xs">
+                Updated: {formatDateTime(task.updatedAt)}
+              </p>
             </div>
           </div>
 
@@ -265,14 +280,21 @@ export const TaskDetailModal: React.FC = () => {
 
           {/* Comments */}
           {taskComments && taskComments.length > 0 && (
-            <div className="pt-4 border-t">
+            <div>
               <div className="flex items-center gap-2 mb-3">
                 <MessageSquare className="w-4 h-4 text-muted-foreground" />
                 <h4 className="font-semibold">Comments ({taskComments.length})</h4>
               </div>
               <div className="space-y-3">
                 {taskComments.map((comment) => (
-                  <div key={comment.id} className="bg-muted/50 rounded-lg p-3">
+                  <div
+                    key={comment.id}
+                    className="rounded-lg p-3"
+                    style={comment.authorType === 'agent'
+                      ? { background: 'linear-gradient(135deg, #FF7BA515, #9B6ED820, #52C4E815)' }
+                      : { backgroundColor: 'hsl(var(--muted) / 0.5)' }
+                    }
+                  >
                     <div className="flex items-center gap-2 mb-1">
                       {comment.authorType === 'agent' ? (
                         <ClaudeIcon size={14} color="#9B6ED8" />

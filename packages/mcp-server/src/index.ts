@@ -2,12 +2,21 @@
 
 /**
  * Entry point for Agent Kanban MCP Server
+ *
+ * By default, uses the API server's database so both servers
+ * share the same data. Override with DATABASE_PATH env variable.
  */
 
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 import { AgentKanbanMCPServer } from './server.js';
 
-// Get database path from environment variable or use default
-const dbPath = process.env.DATABASE_PATH || './data/kanban.db';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Resolve to the API server's database by default so both servers share data
+const defaultDbPath = resolve(__dirname, '../../api-server/data/kanban.db');
+const dbPath = process.env.DATABASE_PATH || defaultDbPath;
 
 const server = new AgentKanbanMCPServer(dbPath);
 

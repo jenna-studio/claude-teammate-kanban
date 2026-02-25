@@ -20,22 +20,22 @@ export function getImportanceColor(importance: TaskImportance): {
       dot: 'bg-[#FF7BA5]',
     },
     high: {
-      bg: 'bg-amber-100',
-      text: 'text-amber-700',
-      border: 'border-amber-300',
-      dot: 'bg-[#FFD966]',
-    },
-    medium: {
       bg: 'bg-purple-100',
       text: 'text-purple-700',
       border: 'border-purple-300',
       dot: 'bg-[#9B6ED8]',
     },
-    low: {
+    medium: {
       bg: 'bg-sky-100',
       text: 'text-sky-700',
       border: 'border-sky-300',
       dot: 'bg-[#52C4E8]',
+    },
+    low: {
+      bg: 'bg-amber-100',
+      text: 'text-amber-700',
+      border: 'border-amber-300',
+      dot: 'bg-[#FFD966]',
     },
   };
 

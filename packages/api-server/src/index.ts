@@ -6,6 +6,7 @@
 import { initDatabase, closeDatabase } from './database.js';
 import { createApiServer, startApiServer } from './api.js';
 import { RealtimeServer } from './websocket.js';
+import { setWebSocketServer } from './routes/index.js';
 
 /**
  * Server configuration from environment variables
@@ -52,6 +53,9 @@ async function startServer() {
       heartbeatInterval: 30000,
       clientTimeout: 60000,
     });
+
+    // Wire WebSocket server to notification route for MCP bridge
+    setWebSocketServer(wsServer);
 
     console.log('');
     console.log('==========================================');

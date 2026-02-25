@@ -11,7 +11,7 @@ import {
 import { EventEmitter } from 'events';
 import { randomUUID } from 'crypto';
 
-import { initDatabase } from './db/database.js';
+import { initDatabase, getDatabase } from './db/database.js';
 import { TaskRepository } from './repositories/task-repository.js';
 import { AgentRepository } from './repositories/agent-repository.js';
 import { BoardRepository } from './repositories/board-repository.js';
@@ -27,6 +27,7 @@ import type {
 } from '@agent-track/shared';
 import { AgentStatus, TaskStatus, TaskImportance } from '@agent-track/shared';
 import { DEFAULT_COLUMNS } from './db/schema.js';
+import { notifyApiServer } from './utils/notifier.js';
 
 export class AgentKanbanMCPServer extends EventEmitter {
   private server: Server;
@@ -441,6 +442,7 @@ export class AgentKanbanMCPServer extends EventEmitter {
     }
 
     this.emit('board:created', board);
+    notifyApiServer('board_created', boardId, { board });
 
     return { boardId, columns: DEFAULT_COLUMNS };
   }
@@ -571,6 +573,7 @@ export class AgentKanbanMCPServer extends EventEmitter {
     this.sessionRepo.incrementTaskCreated(args.sessionId);
 
     this.emit('task:created', task);
+    notifyApiServer('task_created', args.boardId, { task });
 
     return { taskId, status: 'claimed' };
   }
@@ -595,6 +598,7 @@ export class AgentKanbanMCPServer extends EventEmitter {
 
     const updatedTask = this.taskRepo.get(args.taskId);
     this.emit('task:updated', updatedTask);
+    notifyApiServer('task_updated', task.boardId, { task: updatedTask });
 
     return { status: args.status };
   }
@@ -636,6 +640,7 @@ export class AgentKanbanMCPServer extends EventEmitter {
 
     const updatedTask = this.taskRepo.get(args.taskId);
     this.emit('task:updated', updatedTask);
+    notifyApiServer('task_updated', task.boardId, { task: updatedTask });
 
     return { progress: args.progress || task.progress || 0 };
   }
@@ -669,6 +674,7 @@ export class AgentKanbanMCPServer extends EventEmitter {
 
     const updatedTask = this.taskRepo.get(args.taskId);
     this.emit('task:completed', updatedTask);
+    notifyApiServer('task_updated', task.boardId, { task: updatedTask });
 
     return { status: 'done', actualDuration };
   }
@@ -691,14 +697,22 @@ export class AgentKanbanMCPServer extends EventEmitter {
 
     const updatedTask = this.taskRepo.get(args.taskId);
     this.emit('task:failed', updatedTask);
+    notifyApiServer('task_updated', task.boardId, { task: updatedTask });
 
     return { status: 'failed' };
   }
 
   // Task Collaboration Methods
   private addComment(args: any): { commentId: string } {
-    // For now, just return success - full implementation would store in database
     const commentId = randomUUID();
+    const now = Date.now();
+    const db = getDatabase();
+
+    db.prepare(`
+      INSERT INTO comments (id, task_id, author, author_type, content, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(commentId, args.taskId, args.author, 'agent', args.content, now);
+
     this.emit('comment:added', { commentId, ...args });
     return { commentId };
   }
