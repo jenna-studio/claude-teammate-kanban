@@ -3,7 +3,8 @@
  * Displays detailed information about a task
  */
 import React from 'react';
-import { FileCode, Clock, Cpu, AlertCircle, CheckCircle } from 'lucide-react';
+import { FileCode, Clock, AlertCircle, CheckCircle } from 'lucide-react';
+import { ClaudeIcon } from '@/components/icons/ClaudeIcon';
 import {
   Dialog,
   DialogContent,
@@ -88,7 +89,7 @@ export const TaskDetailModal: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Cpu className="w-4 h-4 text-muted-foreground" />
+                <ClaudeIcon size={16} color="#9B6ED8" />
                 <h4 className="font-semibold text-sm">Agent</h4>
               </div>
               <p className="text-sm">{task.agentName}</p>
@@ -144,13 +145,13 @@ export const TaskDetailModal: React.FC = () => {
               <h4 className="font-semibold mb-2">Code Changes</h4>
               <div className="flex gap-4 text-sm">
                 <div className="flex items-center gap-1">
-                  <span className="text-green-600 font-semibold">
+                  <span className="text-emerald-500 font-semibold">
                     +{task.linesChanged.added}
                   </span>
                   <span className="text-muted-foreground">additions</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-red-600 font-semibold">
+                  <span className="text-pink-500 font-semibold">
                     -{task.linesChanged.removed}
                   </span>
                   <span className="text-muted-foreground">deletions</span>
@@ -230,10 +231,10 @@ export const TaskDetailModal: React.FC = () => {
 
           {/* Success Message */}
           {task.status === 'done' && !task.errorMessage && (
-            <div className="bg-green-50 border border-green-200 rounded p-4">
+            <div className="rounded-lg p-4" style={{ backgroundColor: '#5DD9A015', border: '1px solid #5DD9A040' }}>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-700" />
-                <p className="text-sm text-green-700 font-medium">
+                <CheckCircle className="w-4 h-4" style={{ color: '#3DC7BF' }} />
+                <p className="text-sm font-medium" style={{ color: '#2a9d8f' }}>
                   Task completed successfully
                 </p>
               </div>

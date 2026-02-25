@@ -4,7 +4,7 @@
 import type { TaskImportance, TaskStatus, AgentStatus } from '@/types';
 
 /**
- * Get color classes for task importance
+ * Get color classes for task importance — cotton candy palette
  */
 export function getImportanceColor(importance: TaskImportance): {
   bg: string;
@@ -14,28 +14,28 @@ export function getImportanceColor(importance: TaskImportance): {
 } {
   const colors = {
     critical: {
-      bg: 'bg-red-100',
-      text: 'text-red-700',
-      border: 'border-red-300',
-      dot: 'bg-red-500',
+      bg: 'bg-pink-100',
+      text: 'text-pink-700',
+      border: 'border-pink-300',
+      dot: 'bg-[#FF7BA5]',
     },
     high: {
-      bg: 'bg-orange-100',
-      text: 'text-orange-700',
-      border: 'border-orange-300',
-      dot: 'bg-orange-500',
+      bg: 'bg-amber-100',
+      text: 'text-amber-700',
+      border: 'border-amber-300',
+      dot: 'bg-[#FFD966]',
     },
     medium: {
-      bg: 'bg-yellow-100',
-      text: 'text-yellow-700',
-      border: 'border-yellow-300',
-      dot: 'bg-yellow-500',
+      bg: 'bg-purple-100',
+      text: 'text-purple-700',
+      border: 'border-purple-300',
+      dot: 'bg-[#9B6ED8]',
     },
     low: {
-      bg: 'bg-blue-100',
-      text: 'text-blue-700',
-      border: 'border-blue-300',
-      dot: 'bg-blue-500',
+      bg: 'bg-sky-100',
+      text: 'text-sky-700',
+      border: 'border-sky-300',
+      dot: 'bg-[#52C4E8]',
     },
   };
 
@@ -43,7 +43,7 @@ export function getImportanceColor(importance: TaskImportance): {
 }
 
 /**
- * Get color classes for task status
+ * Get color classes for task status — cotton candy palette
  */
 export function getStatusColor(status: TaskStatus): {
   bg: string;
@@ -52,29 +52,29 @@ export function getStatusColor(status: TaskStatus): {
 } {
   const colors = {
     todo: {
-      bg: 'bg-gray-100',
-      text: 'text-gray-700',
-      border: 'border-gray-300',
+      bg: 'bg-pink-50',
+      text: 'text-pink-700',
+      border: 'border-pink-200',
     },
     claimed: {
-      bg: 'bg-blue-100',
-      text: 'text-blue-700',
-      border: 'border-blue-300',
+      bg: 'bg-purple-50',
+      text: 'text-purple-700',
+      border: 'border-purple-200',
     },
     in_progress: {
-      bg: 'bg-purple-100',
-      text: 'text-purple-700',
-      border: 'border-purple-300',
+      bg: 'bg-sky-50',
+      text: 'text-sky-700',
+      border: 'border-sky-200',
     },
     review: {
-      bg: 'bg-yellow-100',
-      text: 'text-yellow-700',
-      border: 'border-yellow-300',
+      bg: 'bg-amber-50',
+      text: 'text-amber-700',
+      border: 'border-amber-200',
     },
     done: {
-      bg: 'bg-green-100',
-      text: 'text-green-700',
-      border: 'border-green-300',
+      bg: 'bg-emerald-50',
+      text: 'text-emerald-700',
+      border: 'border-emerald-200',
     },
   };
 
@@ -82,7 +82,7 @@ export function getStatusColor(status: TaskStatus): {
 }
 
 /**
- * Get color classes for agent status
+ * Get color classes for agent status — cotton candy palette
  */
 export function getAgentStatusColor(status: AgentStatus): {
   bg: string;
@@ -91,19 +91,19 @@ export function getAgentStatusColor(status: AgentStatus): {
 } {
   const colors = {
     active: {
-      bg: 'bg-green-100',
-      text: 'text-green-700',
-      dot: 'bg-green-500',
+      bg: 'bg-emerald-50',
+      text: 'text-emerald-700',
+      dot: 'bg-[#5DD9A0]',
     },
     idle: {
-      bg: 'bg-yellow-100',
-      text: 'text-yellow-700',
-      dot: 'bg-yellow-500',
+      bg: 'bg-amber-50',
+      text: 'text-amber-700',
+      dot: 'bg-[#FFD966]',
     },
     offline: {
-      bg: 'bg-gray-100',
-      text: 'text-gray-700',
-      dot: 'bg-gray-500',
+      bg: 'bg-purple-50',
+      text: 'text-purple-400',
+      dot: 'bg-purple-300',
     },
   };
 
@@ -111,13 +111,13 @@ export function getAgentStatusColor(status: AgentStatus): {
 }
 
 /**
- * Get progress bar color based on percentage
+ * Get progress bar color based on percentage — cotton candy gradient
  */
 export function getProgressColor(progress: number): string {
-  if (progress < 25) return 'bg-red-500';
-  if (progress < 50) return 'bg-orange-500';
-  if (progress < 75) return 'bg-yellow-500';
-  return 'bg-green-500';
+  if (progress < 25) return 'bg-[#FF7BA5]';
+  if (progress < 50) return 'bg-[#9B6ED8]';
+  if (progress < 75) return 'bg-[#52C4E8]';
+  return 'bg-[#5DD9A0]';
 }
 
 /**

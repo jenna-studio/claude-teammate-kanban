@@ -21,11 +21,14 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
   return (
     <header
       className={cn(
-        'border-b bg-background',
+        'border-b',
         'flex items-center justify-between',
         'px-6 py-4',
         className
       )}
+      style={{
+        background: 'linear-gradient(135deg, #FF7BA5 0%, #9B6ED8 50%, #52C4E8 100%)',
+      }}
     >
       {/* Left Section */}
       <div className="flex items-center gap-4">
@@ -34,12 +37,13 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
           size="icon"
           onClick={toggleSidebar}
           aria-label="Toggle sidebar"
+          className="text-white/90 hover:text-white hover:bg-white/20"
         >
           <Menu className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-xl font-bold">Agent Track Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl font-bold text-white">Agent Track Dashboard</h1>
+          <p className="text-sm text-white/75">
             Real-time AI agent activity monitoring
           </p>
         </div>
@@ -47,10 +51,10 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
 
       {/* Right Section */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" aria-label="Notifications">
+        <Button variant="ghost" size="icon" aria-label="Notifications" className="text-white/90 hover:text-white hover:bg-white/20">
           <Bell className="h-5 w-5" />
         </Button>
-        <Button variant="ghost" size="icon" aria-label="Settings">
+        <Button variant="ghost" size="icon" aria-label="Settings" className="text-white/90 hover:text-white hover:bg-white/20">
           <Settings className="h-5 w-5" />
         </Button>
       </div>

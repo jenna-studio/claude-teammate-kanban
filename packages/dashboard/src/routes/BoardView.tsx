@@ -34,8 +34,8 @@ export const BoardView: React.FC<BoardViewProps> = ({ boardId }) => {
 
       {/* Connection Status Indicator */}
       {!connected && (
-        <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-2">
-          <p className="text-sm text-yellow-800">
+        <div className="border-b px-6 py-2" style={{ backgroundColor: '#FFD96620', borderColor: '#FFD96650' }}>
+          <p className="text-sm" style={{ color: '#b8860b' }}>
             {connectionState === 'RECONNECTING'
               ? 'Reconnecting to server...'
               : 'Not connected to real-time server'}
@@ -45,21 +45,17 @@ export const BoardView: React.FC<BoardViewProps> = ({ boardId }) => {
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Kanban Board */}
-        <main className="flex-1 overflow-hidden">
-          <KanbanBoard boardId={boardId} />
-        </main>
-
         {/* Agent Sidebar */}
         {sidebarOpen && (
           <aside
             className={cn(
-              'w-80 border-l bg-background overflow-y-auto',
+              'w-80 border-r overflow-y-auto',
               'flex flex-col'
             )}
+            style={{ backgroundColor: 'hsl(300 30% 98%)' }}
           >
             <div className="p-4 border-b">
-              <h2 className="font-semibold text-lg">Active Agents</h2>
+              <h2 className="font-semibold text-lg" style={{ color: '#9B6ED8' }}>Active Agents</h2>
               <p className="text-sm text-muted-foreground">
                 Monitoring agent activity
               </p>
@@ -69,6 +65,11 @@ export const BoardView: React.FC<BoardViewProps> = ({ boardId }) => {
             </div>
           </aside>
         )}
+
+        {/* Kanban Board */}
+        <main className="flex-1 overflow-hidden">
+          <KanbanBoard boardId={boardId} />
+        </main>
       </div>
 
       {/* Task Detail Modal */}

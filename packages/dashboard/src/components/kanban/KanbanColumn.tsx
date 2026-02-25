@@ -35,27 +35,35 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   const wipLimitReached = column.wipLimit && tasks.length >= column.wipLimit;
   const wipLimitWarning = column.wipLimit && tasks.length >= column.wipLimit * 0.8;
 
+  const columnColors: Record<string, { header: string; accent: string }> = {
+      todo: { header: "#FEBFCD", accent: "#FF7BA5" },
+      claimed: { header: "#E2BEF2", accent: "#9B6ED8" },
+      in_progress: { header: "#B6EBFF", accent: "#52C4E8" },
+      review: { header: "#FBEFB8", accent: "#FFD966" },
+      done: { header: "#B1FECD", accent: "#5DD9A0" },
+  };
+
+  const palette = columnColors[column.id] || { header: '#9B6ED820', accent: '#9B6ED8' };
+
   return (
     <div
       className={cn(
-        'flex flex-col w-80 flex-shrink-0 rounded-lg',
-        'bg-muted/30',
-        isOver && 'ring-2 ring-primary',
+        'flex flex-col w-80 flex-shrink-0 rounded-xl',
+        'bg-white/60 backdrop-blur-sm',
+        isOver && 'ring-2 ring-primary shadow-lg',
         wipLimitReached && 'ring-2 ring-destructive'
       )}
+      style={{ boxShadow: `0 2px 12px ${palette.accent}18` }}
     >
       {/* Column Header */}
       <div
         className={cn(
-          'p-4 border-b',
-          'bg-muted/50 rounded-t-lg',
-          wipLimitWarning && 'bg-yellow-50',
+          'p-4 rounded-t-xl',
           wipLimitReached && 'bg-red-50'
         )}
         style={{
-          backgroundColor: column.color
-            ? `${column.color}20`
-            : undefined,
+          backgroundColor: wipLimitReached ? undefined : palette.header,
+          borderBottom: `2px solid ${palette.accent}`,
         }}
       >
         <div className="flex items-center justify-between">
@@ -63,10 +71,13 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
           <div className="flex items-center gap-2">
             <span
               className={cn(
-                'text-sm text-muted-foreground',
-                wipLimitWarning && 'text-yellow-700 font-medium',
+                'text-sm font-medium px-2 py-0.5 rounded-full',
                 wipLimitReached && 'text-destructive font-semibold'
               )}
+              style={{
+                backgroundColor: `${palette.accent}25`,
+                color: wipLimitReached ? undefined : palette.accent,
+              }}
             >
               {tasks.length}
               {column.wipLimit && ` / ${column.wipLimit}`}
@@ -79,7 +90,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
           </p>
         )}
         {wipLimitWarning && !wipLimitReached && (
-          <p className="text-xs text-yellow-700 mt-1">
+          <p className="text-xs mt-1" style={{ color: palette.accent }}>
             Approaching WIP limit
           </p>
         )}
@@ -90,7 +101,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
         ref={setNodeRef}
         className={cn(
           'flex-1 overflow-y-auto p-4 space-y-3',
-          'min-h-[200px]',
+          'min-h-[200px] rounded-b-xl',
           isOver && 'bg-primary/5'
         )}
         role="list"

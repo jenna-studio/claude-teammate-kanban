@@ -3,7 +3,8 @@
  * Displays individual agent information
  */
 import React from 'react';
-import { Cpu, Activity } from 'lucide-react';
+import { Activity } from 'lucide-react';
+import { ClaudeIcon } from '@/components/icons/ClaudeIcon';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Agent } from '@/types';
@@ -23,13 +24,16 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, className }) => {
   const statusColors = getAgentStatusColor(agent.status);
 
   return (
-    <Card className={cn('hover:shadow-md transition-shadow', className)}>
+    <Card className={cn('hover:shadow-md transition-all hover:-translate-y-0.5 bg-white/80 backdrop-blur-sm border-white/60', className)}>
       <CardContent className="p-4">
         {/* Agent Header */}
         <div className="flex items-start gap-3 mb-3">
           {/* Avatar */}
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-            <Cpu className="w-5 h-5 text-primary" />
+          <div
+            className="flex items-center justify-center w-10 h-10 rounded-full"
+            style={{ background: 'linear-gradient(135deg, #FF7BA530, #9B6ED830)' }}
+          >
+            <ClaudeIcon size={20} color="#9B6ED8" />
           </div>
 
           {/* Agent Info */}

@@ -36,10 +36,12 @@ async function fetchAPI<T>(
       const error = await response.json().catch(() => ({
         error: response.statusText,
       }));
-      throw new Error(error.error || `API Error: ${response.status}`);
+      throw new Error(error.error?.message || error.error || `API Error: ${response.status}`);
     }
 
-    return await response.json();
+    const json = await response.json();
+    // API wraps responses in { success, data } — unwrap it
+    return json.data !== undefined ? json.data : json;
   } catch (error) {
     console.error('API request failed:', error);
     throw error;

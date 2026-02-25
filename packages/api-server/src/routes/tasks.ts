@@ -139,6 +139,17 @@ router.post('/', asyncHandler(async (req, res) => {
     throw new HttpError(400, 'boardId and title are required');
   }
 
+  // Auto-create agent record if it doesn't exist (foreign key requirement)
+  if (agentId) {
+    const existingAgent = db.prepare('SELECT id FROM agents WHERE id = ?').get(agentId);
+    if (!existingAgent) {
+      db.prepare(`
+        INSERT INTO agents (id, name, type, status, last_heartbeat)
+        VALUES (?, ?, ?, 'active', ?)
+      `).run(agentId, agentName || agentId, agentType || 'unknown', Date.now());
+    }
+  }
+
   const task = taskRepo.create({
     boardId,
     title,

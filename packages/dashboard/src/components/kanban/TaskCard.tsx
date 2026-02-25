@@ -4,7 +4,8 @@
  */
 import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { Clock, AlertCircle, FileCode, Cpu } from 'lucide-react';
+import { Clock, AlertCircle, FileCode } from 'lucide-react';
+import { ClaudeIcon } from '@/components/icons/ClaudeIcon';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
@@ -58,7 +59,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       {...attributes}
       onClick={handleClick}
       className={cn(
-        'cursor-grab active:cursor-grabbing p-4 hover:shadow-md transition-shadow',
+        'cursor-grab active:cursor-grabbing p-4 transition-all',
+        'hover:shadow-md hover:-translate-y-0.5',
+        'bg-white/80 backdrop-blur-sm border-white/60',
         isDragging && 'opacity-50 shadow-lg',
         'select-none'
       )}
@@ -95,7 +98,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
 
       {/* Agent Info */}
       <div className="flex items-center gap-2 mb-2">
-        <Cpu className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
+        <ClaudeIcon size={12} color="#9B6ED8" />
         <span className="text-xs text-muted-foreground truncate">
           {task.agentName}
         </span>
@@ -140,9 +143,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       {/* Lines Changed */}
       {task.linesChanged && (
         <div className="text-xs text-muted-foreground">
-          <span className="text-green-600">+{task.linesChanged.added}</span>
+          <span className="text-emerald-500">+{task.linesChanged.added}</span>
           {' / '}
-          <span className="text-red-600">-{task.linesChanged.removed}</span>
+          <span className="text-pink-500">-{task.linesChanged.removed}</span>
         </div>
       )}
 

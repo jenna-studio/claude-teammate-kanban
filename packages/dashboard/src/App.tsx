@@ -2,7 +2,7 @@
  * App Component
  * Root application component with routing and error boundary
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { BoardView } from '@/routes/BoardView';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
@@ -13,13 +13,14 @@ import { useBoard } from '@/hooks/useBoard';
  * Main application component
  */
 const App: React.FC = () => {
-  const { boards, loading, fetchBoards } = useBoard(null);
+  const { boards, fetchBoards } = useBoard(null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
-    fetchBoards();
+    fetchBoards().finally(() => setInitialLoading(false));
   }, [fetchBoards]);
 
-  if (loading && boards.length === 0) {
+  if (initialLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" message="Loading dashboard..." />
