@@ -1,0 +1,45 @@
+{
+  "name": "agent-track-dashboard",
+  "version": "0.1.0",
+  "description": "Real-time agent activity tracking dashboard with kanban board visualization",
+  "private": true,
+  "workspaces": [
+    "packages/mcp-server",
+    "packages/api-server",
+    "packages/dashboard",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm:dev:*\"",
+    "dev:mcp": "npm run dev --workspace=packages/mcp-server",
+    "dev:api": "npm run dev --workspace=packages/api-server",
+    "dev:dashboard": "npm run dev --workspace=packages/dashboard",
+    "build": "npm run build --workspaces",
+    "build:mcp": "npm run build --workspace=packages/mcp-server",
+    "build:api": "npm run build --workspace=packages/api-server",
+    "build:dashboard": "npm run build --workspace=packages/dashboard",
+    "start": "npm run start --workspace=packages/api-server",
+    "lint": "eslint . --ext .ts,.tsx",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf node_modules packages/*/node_modules packages/*/dist"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "tracking",
+    "kanban",
+    "mcp",
+    "dashboard",
+    "monitoring"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  }
+}
