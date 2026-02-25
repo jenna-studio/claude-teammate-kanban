@@ -83,7 +83,7 @@ export const SettingsModal: React.FC = () => {
 
   return (
     <Dialog open={settingsModalOpen} onOpenChange={closeSettingsModal}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md shadow-2xl">
         <DialogHeader>
           <DialogTitle style={{ color: '#9B6ED8' }}>Connection Settings</DialogTitle>
           <DialogDescription>Configure how the dashboard connects to the API server.</DialogDescription>

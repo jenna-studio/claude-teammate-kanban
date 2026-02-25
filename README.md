@@ -8,12 +8,13 @@ A comprehensive monitoring and tracking system for AI agents, visualized as an i
 
 This project provides:
 
-- 🤖 **Agent Activity Tracking** - Monitor what AI agents are doing in real-time
+- 🤖 **Agent Activity Tracking** - Monitor what AI agents are doing in real-time with auto-updating status (active/idle/offline)
 - 📊 **Kanban Board Visualization** - Visual workflow management with drag-and-drop
-- 🔍 **Code Diff Viewing** - See all code changes made by agents
-- 📡 **Real-time Updates** - WebSocket-based live updates
+- 🔍 **Code Diff Viewing** - See all code changes made by agents with file-level details and syntax highlighting
+- 📡 **Real-time Updates** - WebSocket-based live updates for tasks and agent statistics
 - 🎯 **Task Management** - Full task lifecycle from creation to completion
-- 📈 **Analytics & Insights** - Track agent performance and productivity
+- 📈 **Analytics & Insights** - Track agent performance with dynamically computed statistics
+- 📝 **Detailed Task Cards** - View file modifications with change types (added/modified/deleted/renamed) and line counts
 
 ## Architecture
 
@@ -125,8 +126,13 @@ Each task card displays:
 
 ### Prerequisites
 
-- Node.js 20+
-- npm or yarn
+- **Node.js** 20 or higher
+- **pnpm** 8 or higher (recommended)
+
+```bash
+# Install pnpm globally if not already installed
+npm install -g pnpm
+```
 
 ### Installation
 
@@ -136,11 +142,27 @@ git clone https://github.com/yourusername/agent-track-dashboard.git
 cd agent-track-dashboard
 
 # Install dependencies
-npm install
+pnpm install
 
 # Build all packages
-npm run build
+pnpm build
 ```
+
+### Quick Start
+
+**Terminal 1** - Start the API + WebSocket Server:
+```bash
+pnpm --filter @agent-track/api-server dev
+```
+
+**Terminal 2** - Start the Dashboard:
+```bash
+pnpm --filter @agent-track/dashboard dev
+```
+
+**Open your browser** to `http://localhost:5173`
+
+That's it! The dashboard is now running and ready to receive agent updates.
 
 ### Development
 
@@ -263,32 +285,256 @@ VITE_WS_URL=ws://localhost:8080
 
 ## Features
 
-### Real-time Monitoring
+### 📊 Enhanced Task Cards
+
+Task cards now display comprehensive code modification details:
+
+**When code is modified, you'll see:**
+- **File-level changes** with color-coded icons:
+  - 🟢 **Green +** for newly added files
+  - 🟡 **Amber ~** for modified files
+  - 🔴 **Red ×** for deleted files
+  - 🔵 **Blue →** for renamed files
+- **File names** in monospace font for better readability
+- **Line counts** per file showing additions (+X) and deletions (-Y)
+- **Smart truncation** - First 3 files shown with "+N more files" indicator
+- **Fallback display** - Shows simple file list if detailed changes aren't available
+
+**Location**: Visible directly on task cards in the kanban board
+
+### 🤖 Dynamic Agent Status
+
+Agent status is computed in real-time based on heartbeat activity:
+
+- **🟢 Active** - Heartbeat received within last 5 minutes
+  - Shows green badge and indicator dot
+  - Indicates agent is connected and responsive
+
+- **🟡 Idle** - Heartbeat between 5-10 minutes ago
+  - Shows yellow/amber badge and indicator dot
+  - Agent is connected but may be inactive
+
+- **🟣 Offline** - No heartbeat for 10+ minutes
+  - Shows purple/gray badge and indicator dot
+  - Agent is considered disconnected
+
+**Status transitions automatically** - no manual updates required!
+
+### 📈 Real-time Agent Statistics
+
+Agent cards now display **live statistics** computed directly from task data:
+
+- **Tasks Completed** - Count of tasks with `status = 'done'`
+- **Tasks In Progress** - Count of active tasks (`claimed` or `in_progress`)
+- **Success Rate** - (Successful tasks / Total completed) × 100%
+- **Average Duration** - Real average from completed task durations
+
+**Stats update automatically** via WebSocket when:
+- Tasks are created or updated
+- Tasks are completed or failed
+- Agents claim or start tasks
+
+### 🔄 Real-time Monitoring
 
 - Live updates as agents create and update tasks
 - WebSocket-based communication for instant synchronization
-- No page refresh needed
+- **Dual broadcasts** - Both task updates AND agent stat updates sent together
+- No page refresh needed - everything syncs automatically
 
-### Code Change Tracking
+### 🔍 Code Change Tracking
 
 - View all code changes made by agents
-- Syntax-highlighted diff view
-- File-by-file breakdown
+- Syntax-highlighted diff view in task detail modal
+- File-by-file breakdown with change types
 - Insertions/deletions statistics
+- **Unified diff format** support
 
-### Agent Coordination
+### 🤝 Agent Coordination
 
-- See which agents are active
-- Track task dependencies
-- Prevent conflicts with task locking
+- See which agents are active in real-time
+- Track task dependencies and blockers
+- Prevent conflicts with task claiming
 - Inter-agent communication via comments
+- **Heartbeat monitoring** for agent health tracking
 
-### Analytics
+### 📊 Analytics
 
-- Agent performance metrics
+- Agent performance metrics computed on-demand
 - Task completion rates
-- Time tracking
+- Time tracking with actual vs. estimated duration
 - Token usage statistics
+- **Dynamic computation** ensures stats are always accurate
+
+## Troubleshooting
+
+### Dashboard won't connect to API server
+
+**Symptoms**: Dashboard shows "Disconnected" or tasks don't load
+
+**Solutions**:
+1. Verify API server is running:
+   ```bash
+   curl http://localhost:3000/health
+   # Should return: {"status":"ok","timestamp":"..."}
+   ```
+
+2. Check WebSocket connection:
+   - Open browser DevTools → Console
+   - Look for WebSocket connection messages
+   - Ensure port 8080 is not blocked or in use
+
+3. Verify CORS settings:
+   ```bash
+   # In packages/api-server/.env
+   CORS_ORIGIN=*  # For development
+   ```
+
+### Agent status stuck on "Active" or not changing
+
+**Symptoms**: Agent shows active even though it's been offline for a while
+
+**Solutions**:
+1. **Check heartbeat intervals**: Agents should send heartbeats every 30-60 seconds
+   - Look for heartbeat requests in API server logs
+   - Verify MCP server is calling `heartbeat` tool
+
+2. **Refresh the dashboard**: Agent status is computed dynamically on each fetch
+   - Click refresh button or reload the page
+   - Status should update based on last heartbeat timestamp
+
+3. **Verify time synchronization**: Ensure system clocks are in sync
+   - Status computation uses timestamp comparison
+   - Time drift can cause incorrect status
+
+### Agent statistics showing 0 or not updating
+
+**Symptoms**: Agent card shows "0 active", "0 completed" even though tasks exist
+
+**Solutions**:
+1. **Check WebSocket connection**: Stats update via WebSocket
+   - Open DevTools → Network → WS tab
+   - Verify connection to `ws://localhost:8080`
+   - Look for `agent_status_changed` messages
+
+2. **Verify tasks are linked to agent**:
+   ```bash
+   # Check database
+   sqlite3 packages/api-server/data/kanban.db "SELECT * FROM agent_tasks WHERE agent_id = 'your-agent-id';"
+   ```
+
+3. **Restart API server**: Forces statistics recomputation
+   ```bash
+   pnpm --filter @agent-track/api-server dev
+   ```
+
+### Tasks not appearing on dashboard
+
+**Symptoms**: Tasks created by agents don't show up
+
+**Solutions**:
+1. **Check board subscription**:
+   - Open DevTools → Console
+   - Look for: `WebSocket connected` and `Subscribed to board: board-xxx`
+   - Dashboard must subscribe to board to receive updates
+
+2. **Verify database**:
+   ```bash
+   sqlite3 packages/api-server/data/kanban.db "SELECT id, title, status FROM agent_tasks;"
+   ```
+
+3. **Check MCP → API bridge**:
+   - MCP server should notify API server via `/api/notify` endpoint
+   - Check MCP server logs for notification attempts
+   - Verify API server URL is correct in MCP configuration
+
+### Code changes not displaying on task cards
+
+**Symptoms**: Task cards show file count but no file details
+
+**Solutions**:
+1. **Verify `codeChanges` field**: Check if task has code changes:
+   ```bash
+   sqlite3 packages/api-server/data/kanban.db "SELECT code_changes FROM agent_tasks WHERE id = 'task-id';"
+   ```
+
+2. **Use `update_task_progress` with `codeChanges`**:
+   ```typescript
+   await mcp.callTool('update_task_progress', {
+     taskId: 'task-123',
+     codeChanges: [
+       {
+         filePath: 'src/file.ts',
+         changeType: 'modified',
+         diff: '...',
+         linesAdded: 10,
+         linesDeleted: 5
+       }
+     ]
+   });
+   ```
+
+3. **Rebuild dashboard** if changes were recent:
+   ```bash
+   pnpm --filter @agent-track/dashboard build
+   ```
+
+### Port conflicts
+
+**Symptoms**: "Port already in use" errors
+
+**Solutions**:
+```bash
+# Find and kill process using the port
+lsof -ti:3000 | xargs kill -9  # API server
+lsof -ti:8080 | xargs kill -9  # WebSocket server
+lsof -ti:5173 | xargs kill -9  # Dashboard
+
+# Or use different ports
+API_PORT=4000 WEBSOCKET_PORT=9000 pnpm --filter @agent-track/api-server dev
+```
+
+### Database locked errors
+
+**Symptoms**: SQLite database locked errors in logs
+
+**Solutions**:
+1. **Stop all processes** accessing the database:
+   - Stop MCP server
+   - Stop API server
+   - Wait 5 seconds
+
+2. **Check for stale connections**:
+   ```bash
+   lsof packages/api-server/data/kanban.db
+   ```
+
+3. **Reset database** (⚠️ deletes all data):
+   ```bash
+   rm packages/api-server/data/kanban.db
+   # Restart API server to recreate schema
+   ```
+
+### WebSocket keeps disconnecting
+
+**Symptoms**: Frequent reconnection messages in console
+
+**Solutions**:
+1. **Check heartbeat interval**: Default is 30 seconds
+   - Verify client is sending heartbeats
+   - Server times out after 60 seconds without heartbeat
+
+2. **Check network stability**: WebSocket requires stable connection
+   - Test with: `wscat -c ws://localhost:8080`
+
+3. **Increase timeout** in API server:
+   ```typescript
+   // packages/api-server/src/index.ts
+   const wsServer = new RealtimeServer({
+     port: 8080,
+     heartbeatInterval: 30000,
+     clientTimeout: 120000  // Increase to 2 minutes
+   });
+   ```
 
 ## Contributing
 
@@ -300,15 +546,14 @@ MIT
 
 ## Roadmap
 
-- [ ] Initial MVP implementation
-- [ ] Basic kanban board functionality
-- [ ] Code diff viewing
-- [ ] Multi-board support
-- [ ] GitHub integration
-- [ ] Jira/Linear sync
-- [ ] Analytics dashboard
-- [ ] Mobile app
-- [ ] Plugin system for extensibility
+- [x] Initial MVP implementation
+- [x] Basic kanban board functionality
+- [x] Code diff viewing with file-level details
+- [x] Real-time WebSocket updates
+- [x] Dynamic agent status computation
+- [x] Live agent statistics
+- [x] Enhanced task cards with code changes
+- [x] Task detail modal with comprehensive info
 
 ## Support
 

@@ -28,6 +28,19 @@ function getApiBaseUrl(): string {
 const API_BASE_URL = getApiBaseUrl();
 
 /**
+ * Global API error handler registry
+ */
+type ApiErrorHandler = (error: Error, endpoint: string) => void;
+const apiErrorHandlers: Set<ApiErrorHandler> = new Set();
+
+export function onApiError(handler: ApiErrorHandler): () => void {
+  apiErrorHandlers.add(handler);
+  return () => {
+    apiErrorHandlers.delete(handler);
+  };
+}
+
+/**
  * Generic fetch wrapper with error handling
  */
 async function fetchAPI<T>(
@@ -55,6 +68,13 @@ async function fetchAPI<T>(
     return json.data !== undefined ? json.data : json;
   } catch (error) {
     console.error('API request failed:', error);
+    if (error instanceof Error) {
+      apiErrorHandlers.forEach((handler) => {
+        try {
+          handler(error, endpoint);
+        } catch { /* ignore handler errors */ }
+      });
+    }
     throw error;
   }
 }

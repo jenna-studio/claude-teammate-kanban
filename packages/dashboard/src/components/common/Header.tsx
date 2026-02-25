@@ -3,8 +3,9 @@
  * Top navigation and controls
  */
 import React from 'react';
-import { Menu, Bell, Settings, RefreshCw } from 'lucide-react';
+import { Menu, Settings, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AlertDropdown } from '@/components/common/AlertDropdown';
 import { useUIStore } from '@/stores/uiStore';
 import { cn } from '@/utils/cn';
 
@@ -60,9 +61,7 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
         >
           <RefreshCw className="h-5 w-5" />
         </Button>
-        <Button variant="ghost" size="icon" aria-label="Notifications" className="text-white/90 hover:text-white hover:bg-white/20">
-          <Bell className="h-5 w-5" />
-        </Button>
+        <AlertDropdown />
         <Button variant="ghost" size="icon" aria-label="Settings" className="text-white/90 hover:text-white hover:bg-white/20" onClick={openSettingsModal}>
           <Settings className="h-5 w-5" />
         </Button>

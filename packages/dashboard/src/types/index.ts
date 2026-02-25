@@ -337,3 +337,26 @@ export interface DragItem {
   type: 'task';
   data: AgentTask;
 }
+
+/**
+ * Alert severity levels for system notifications
+ */
+export type AlertSeverity = 'error' | 'warning' | 'info' | 'success';
+
+/**
+ * Alert source identifying what generated the alert
+ */
+export type AlertSource = 'websocket' | 'api' | 'system';
+
+/**
+ * System alert notification
+ */
+export interface SystemAlert {
+  id: string;
+  severity: AlertSeverity;
+  source: AlertSource;
+  title: string;
+  message: string;
+  timestamp: Date;
+  read: boolean;
+}

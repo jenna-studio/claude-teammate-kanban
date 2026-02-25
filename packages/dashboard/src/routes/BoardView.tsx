@@ -9,6 +9,7 @@ import { TaskDetailModal } from '@/components/task/TaskDetailModal';
 import { SettingsModal } from '@/components/settings/SettingsModal';
 import { Header } from '@/components/common/Header';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useSystemAlerts } from '@/hooks/useSystemAlerts';
 import { useUIStore } from '@/stores/uiStore';
 import { cn } from '@/utils/cn';
 
@@ -27,6 +28,7 @@ export interface BoardViewProps {
 export const BoardView: React.FC<BoardViewProps> = ({ boardId }) => {
   const { sidebarOpen } = useUIStore();
   const { connected, connectionState } = useWebSocket(boardId);
+  useSystemAlerts();
 
   return (
     <div className="h-screen flex flex-col bg-background">

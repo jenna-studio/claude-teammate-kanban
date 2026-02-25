@@ -1,7 +1,7 @@
 /**
  * Color utility functions for task priorities, agent status, etc.
  */
-import type { TaskImportance, TaskStatus, AgentStatus } from '@/types';
+import type { TaskImportance, TaskStatus, AgentStatus, AlertSeverity } from '@/types';
 
 /**
  * Get color classes for task importance — cotton candy palette
@@ -118,6 +118,45 @@ export function getProgressColor(progress: number): string {
   if (progress < 50) return 'bg-[#9B6ED8]';
   if (progress < 75) return 'bg-[#52C4E8]';
   return 'bg-[#5DD9A0]';
+}
+
+/**
+ * Get color classes for alert severity — cotton candy palette
+ */
+export function getAlertSeverityColor(severity: AlertSeverity): {
+  bg: string;
+  text: string;
+  border: string;
+  icon: string;
+} {
+  const colors = {
+    error: {
+      bg: 'bg-pink-50',
+      text: 'text-pink-700',
+      border: 'border-pink-200',
+      icon: 'text-[#FF7BA5]',
+    },
+    warning: {
+      bg: 'bg-amber-50',
+      text: 'text-amber-700',
+      border: 'border-amber-200',
+      icon: 'text-[#FFD966]',
+    },
+    info: {
+      bg: 'bg-sky-50',
+      text: 'text-sky-700',
+      border: 'border-sky-200',
+      icon: 'text-[#52C4E8]',
+    },
+    success: {
+      bg: 'bg-emerald-50',
+      text: 'text-emerald-700',
+      border: 'border-emerald-200',
+      icon: 'text-[#5DD9A0]',
+    },
+  };
+
+  return colors[severity];
 }
 
 /**
