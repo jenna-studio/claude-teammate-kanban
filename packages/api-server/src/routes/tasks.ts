@@ -109,4 +109,132 @@ router.get('/:id/code-changes', validate(schemas.taskId, 'params'), asyncHandler
   });
 }));
 
+/**
+ * POST /api/tasks
+ * Create a new task
+ */
+router.post('/', asyncHandler(async (req, res) => {
+  const db = getDatabase();
+  const taskRepo = new TaskRepository(db);
+
+  const {
+    boardId,
+    title,
+    description,
+    importance,
+    status,
+    agentId,
+    agentName,
+    agentType,
+    sessionId,
+    progress,
+    currentAction,
+    files,
+    estimatedDuration,
+    parentTaskId,
+    tags,
+  } = req.body;
+
+  if (!boardId || !title) {
+    throw new HttpError(400, 'boardId and title are required');
+  }
+
+  const task = taskRepo.create({
+    boardId,
+    title,
+    description,
+    importance,
+    status,
+    agentId,
+    agentName,
+    agentType,
+    sessionId,
+    progress,
+    currentAction,
+    files,
+    estimatedDuration,
+    parentTaskId,
+    tags,
+  });
+
+  res.status(201).json({
+    success: true,
+    data: task,
+  });
+}));
+
+/**
+ * PATCH /api/tasks/:id
+ * Update a task
+ */
+router.patch('/:id', validate(schemas.taskId, 'params'), asyncHandler(async (req, res) => {
+  const db = getDatabase();
+  const taskRepo = new TaskRepository(db);
+
+  const {
+    title,
+    description,
+    importance,
+    status,
+    progress,
+    currentAction,
+    files,
+    linesChanged,
+    tokensUsed,
+    estimatedDuration,
+    actualDuration,
+    blockedBy,
+    tags,
+    errorMessage,
+    commitHash,
+  } = req.body;
+
+  const task = taskRepo.update(req.params.id, {
+    title,
+    description,
+    importance,
+    status,
+    progress,
+    currentAction,
+    files,
+    linesChanged,
+    tokensUsed,
+    estimatedDuration,
+    actualDuration,
+    blockedBy,
+    tags,
+    errorMessage,
+    commitHash,
+  });
+
+  if (!task) {
+    throw new HttpError(404, 'Task not found');
+  }
+
+  res.json({
+    success: true,
+    data: task,
+  });
+}));
+
+/**
+ * DELETE /api/tasks/:id
+ * Delete a task
+ */
+router.delete('/:id', validate(schemas.taskId, 'params'), asyncHandler(async (req, res) => {
+  const db = getDatabase();
+  const taskRepo = new TaskRepository(db);
+
+  const deleted = taskRepo.delete(req.params.id);
+
+  if (!deleted) {
+    throw new HttpError(404, 'Task not found');
+  }
+
+  res.json({
+    success: true,
+    message: 'Task deleted successfully',
+  });
+}));
+
 export default router;

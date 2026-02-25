@@ -226,6 +226,124 @@ export class BoardRepository {
   }
 
   /**
+   * Create a new board
+   * @param data - Board data
+   * @returns Created board
+   */
+  create(data: {
+    name: string;
+    description?: string;
+    projectPath: string;
+    repository?: string;
+    settings?: Partial<BoardSettings>;
+  }): Board {
+    const id = this.generateId();
+    const now = new Date().toISOString();
+    const settings = { ...data.settings };
+
+    const stmt = this.db.prepare(`
+      INSERT INTO boards (id, name, description, project_path, repository, settings, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(
+      id,
+      data.name,
+      data.description || null,
+      data.projectPath,
+      data.repository || null,
+      JSON.stringify(settings),
+      now,
+      now
+    );
+
+    return this.getById(id)!;
+  }
+
+  /**
+   * Update a board
+   * @param id - Board ID
+   * @param data - Updated board data
+   * @returns Updated board or null if not found
+   */
+  update(id: string, data: {
+    name?: string;
+    description?: string;
+    projectPath?: string;
+    repository?: string;
+    settings?: Partial<BoardSettings>;
+  }): Board | null {
+    const existing = this.getById(id);
+    if (!existing) {
+      return null;
+    }
+
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (data.name !== undefined) {
+      updates.push('name = ?');
+      values.push(data.name);
+    }
+    if (data.description !== undefined) {
+      updates.push('description = ?');
+      values.push(data.description);
+    }
+    if (data.projectPath !== undefined) {
+      updates.push('project_path = ?');
+      values.push(data.projectPath);
+    }
+    if (data.repository !== undefined) {
+      updates.push('repository = ?');
+      values.push(data.repository);
+    }
+    if (data.settings !== undefined) {
+      updates.push('settings = ?');
+      values.push(JSON.stringify({ ...existing.settings, ...data.settings }));
+    }
+
+    if (updates.length === 0) {
+      return existing;
+    }
+
+    updates.push('updated_at = ?');
+    values.push(new Date().toISOString());
+    values.push(id);
+
+    const stmt = this.db.prepare(`
+      UPDATE boards
+      SET ${updates.join(', ')}
+      WHERE id = ?
+    `);
+
+    stmt.run(...values);
+    return this.getById(id);
+  }
+
+  /**
+   * Delete a board
+   * @param id - Board ID
+   * @returns True if deleted, false if not found
+   */
+  delete(id: string): boolean {
+    const existing = this.getById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const stmt = this.db.prepare('DELETE FROM boards WHERE id = ?');
+    stmt.run(id);
+    return true;
+  }
+
+  /**
+   * Generate a unique ID
+   */
+  private generateId(): string {
+    return `board-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  }
+
+  /**
    * Map database row to Board object
    */
   private mapRowToBoard(row: any): Board {

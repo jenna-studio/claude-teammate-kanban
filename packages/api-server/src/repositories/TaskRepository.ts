@@ -249,25 +249,235 @@ export class TaskRepository {
   }
 
   /**
+   * Create a new task
+   * @param data - Task data
+   * @returns Created task
+   */
+  create(data: {
+    boardId: string;
+    title: string;
+    description?: string;
+    importance?: string;
+    status?: string;
+    agentId?: string;
+    agentName?: string;
+    agentType?: string;
+    sessionId?: string;
+    progress?: number;
+    currentAction?: string;
+    files?: string[];
+    estimatedDuration?: number;
+    parentTaskId?: string;
+    tags?: string[];
+  }): AgentTask {
+    const id = this.generateId();
+    const now = new Date().toISOString();
+
+    const stmt = this.db.prepare(`
+      INSERT INTO agent_tasks (
+        id,
+        board_id,
+        title,
+        description,
+        importance,
+        status,
+        agent_id,
+        agent_name,
+        agent_type,
+        session_id,
+        created_at,
+        updated_at,
+        progress,
+        current_action,
+        files,
+        estimated_duration,
+        parent_task_id,
+        tags
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(
+      id,
+      data.boardId,
+      data.title,
+      data.description || null,
+      data.importance || 'medium',
+      data.status || 'pending',
+      data.agentId || null,
+      data.agentName || null,
+      data.agentType || null,
+      data.sessionId || null,
+      now,
+      now,
+      data.progress || 0,
+      data.currentAction || null,
+      data.files ? JSON.stringify(data.files) : null,
+      data.estimatedDuration || null,
+      data.parentTaskId || null,
+      data.tags ? JSON.stringify(data.tags) : null
+    );
+
+    return this.getById(id)!;
+  }
+
+  /**
+   * Update a task
+   * @param id - Task ID
+   * @param data - Updated task data
+   * @returns Updated task or null if not found
+   */
+  update(id: string, data: {
+    title?: string;
+    description?: string;
+    importance?: string;
+    status?: string;
+    progress?: number;
+    currentAction?: string;
+    files?: string[];
+    linesChanged?: { added: number; removed: number };
+    tokensUsed?: number;
+    estimatedDuration?: number;
+    actualDuration?: number;
+    blockedBy?: string[];
+    tags?: string[];
+    errorMessage?: string;
+    commitHash?: string;
+  }): AgentTask | null {
+    const existing = this.getById(id);
+    if (!existing) {
+      return null;
+    }
+
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (data.title !== undefined) {
+      updates.push('title = ?');
+      values.push(data.title);
+    }
+    if (data.description !== undefined) {
+      updates.push('description = ?');
+      values.push(data.description);
+    }
+    if (data.importance !== undefined) {
+      updates.push('importance = ?');
+      values.push(data.importance);
+    }
+    if (data.status !== undefined) {
+      updates.push('status = ?');
+      values.push(data.status);
+
+      // Update status timestamps
+      if (data.status === 'claimed' && !existing.claimedAt) {
+        updates.push('claimed_at = ?');
+        values.push(new Date().toISOString());
+      }
+      if (data.status === 'in_progress' && !existing.startedAt) {
+        updates.push('started_at = ?');
+        values.push(new Date().toISOString());
+      }
+      if (data.status === 'done' && !existing.completedAt) {
+        updates.push('completed_at = ?');
+        values.push(new Date().toISOString());
+      }
+    }
+    if (data.progress !== undefined) {
+      updates.push('progress = ?');
+      values.push(data.progress);
+    }
+    if (data.currentAction !== undefined) {
+      updates.push('current_action = ?');
+      values.push(data.currentAction);
+    }
+    if (data.files !== undefined) {
+      updates.push('files = ?');
+      values.push(JSON.stringify(data.files));
+    }
+    if (data.linesChanged !== undefined) {
+      updates.push('lines_changed = ?');
+      values.push(JSON.stringify(data.linesChanged));
+    }
+    if (data.tokensUsed !== undefined) {
+      updates.push('tokens_used = ?');
+      values.push(data.tokensUsed);
+    }
+    if (data.estimatedDuration !== undefined) {
+      updates.push('estimated_duration = ?');
+      values.push(data.estimatedDuration);
+    }
+    if (data.actualDuration !== undefined) {
+      updates.push('actual_duration = ?');
+      values.push(data.actualDuration);
+    }
+    if (data.blockedBy !== undefined) {
+      updates.push('blocked_by = ?');
+      values.push(JSON.stringify(data.blockedBy));
+    }
+    if (data.tags !== undefined) {
+      updates.push('tags = ?');
+      values.push(JSON.stringify(data.tags));
+    }
+    if (data.errorMessage !== undefined) {
+      updates.push('error_message = ?');
+      values.push(data.errorMessage);
+    }
+    if (data.commitHash !== undefined) {
+      updates.push('commit_hash = ?');
+      values.push(data.commitHash);
+    }
+
+    if (updates.length === 0) {
+      return existing;
+    }
+
+    updates.push('updated_at = ?');
+    values.push(new Date().toISOString());
+    values.push(id);
+
+    const stmt = this.db.prepare(`
+      UPDATE agent_tasks
+      SET ${updates.join(', ')}
+      WHERE id = ?
+    `);
+
+    stmt.run(...values);
+    return this.getById(id);
+  }
+
+  /**
    * Update task status
    * @param taskId - Task ID
    * @param status - New status
    * @returns Updated task or null if not found
    */
   updateStatus(taskId: string, status: string): AgentTask | null {
-    const stmt = this.db.prepare(`
-      UPDATE agent_tasks
-      SET status = ?, updated_at = ?
-      WHERE id = ?
-    `);
+    return this.update(taskId, { status });
+  }
 
-    const result = stmt.run(status, new Date().toISOString(), taskId);
-
-    if (result.changes === 0) {
-      return null;
+  /**
+   * Delete a task
+   * @param id - Task ID
+   * @returns True if deleted, false if not found
+   */
+  delete(id: string): boolean {
+    const existing = this.getById(id);
+    if (!existing) {
+      return false;
     }
 
-    return this.getById(taskId);
+    // Delete associated data first
+    this.db.prepare('DELETE FROM code_changes WHERE task_id = ?').run(id);
+    this.db.prepare('DELETE FROM comments WHERE task_id = ?').run(id);
+    this.db.prepare('DELETE FROM agent_tasks WHERE id = ?').run(id);
+
+    return true;
+  }
+
+  /**
+   * Generate a unique ID
+   */
+  private generateId(): string {
+    return `task-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   }
 
   /**
