@@ -46,7 +46,30 @@ export class WebSocketClient {
    * @param url WebSocket server URL
    */
   constructor(url?: string) {
-    this.url = url || import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
+    this.url = url || WebSocketClient.getStoredWsUrl();
+    this.maxReconnectAttempts = WebSocketClient.getStoredMaxAttempts();
+  }
+
+  private static getStoredWsUrl(): string {
+    try {
+      const stored = localStorage.getItem('agent-track-settings');
+      if (stored) {
+        const settings = JSON.parse(stored);
+        if (settings.wsUrl) return settings.wsUrl;
+      }
+    } catch { /* ignore */ }
+    return import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
+  }
+
+  private static getStoredMaxAttempts(): number {
+    try {
+      const stored = localStorage.getItem('agent-track-settings');
+      if (stored) {
+        const settings = JSON.parse(stored);
+        if (typeof settings.maxReconnectAttempts === 'number') return settings.maxReconnectAttempts;
+      }
+    } catch { /* ignore */ }
+    return 10;
   }
 
   /**

@@ -3,7 +3,7 @@
  * Top navigation and controls
  */
 import React from 'react';
-import { Menu, Bell, Settings } from 'lucide-react';
+import { Menu, Bell, Settings, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUIStore } from '@/stores/uiStore';
 import { cn } from '@/utils/cn';
@@ -16,7 +16,7 @@ export interface HeaderProps {
  * Header displays app navigation and controls
  */
 export const Header: React.FC<HeaderProps> = ({ className }) => {
-  const { toggleSidebar } = useUIStore();
+  const { toggleSidebar, openSettingsModal } = useUIStore();
 
   return (
     <header
@@ -51,10 +51,19 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
 
       {/* Right Section */}
       <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Refresh"
+          className="text-white/90 hover:text-white hover:bg-white/20"
+          onClick={() => window.location.reload()}
+        >
+          <RefreshCw className="h-5 w-5" />
+        </Button>
         <Button variant="ghost" size="icon" aria-label="Notifications" className="text-white/90 hover:text-white hover:bg-white/20">
           <Bell className="h-5 w-5" />
         </Button>
-        <Button variant="ghost" size="icon" aria-label="Settings" className="text-white/90 hover:text-white hover:bg-white/20">
+        <Button variant="ghost" size="icon" aria-label="Settings" className="text-white/90 hover:text-white hover:bg-white/20" onClick={openSettingsModal}>
           <Settings className="h-5 w-5" />
         </Button>
       </div>

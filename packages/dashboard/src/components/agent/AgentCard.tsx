@@ -25,8 +25,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, className }) => {
 
   return (
     <Card
-      className={cn('hover:shadow-md transition-all hover:-translate-y-0.5 backdrop-blur-sm border-white/60', className)}
-      style={{ background: 'linear-gradient(135deg, #FF7BA512, #9B6ED812, #52C4E812)' }}
+      className={cn('shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 backdrop-blur-sm border-white/60', className)}
+      style={{ background: 'linear-gradient(135deg, #FF7BA520, #9B6ED820, #52C4E820)' }}
     >
       <CardContent className="p-4">
         {/* Agent Header */}

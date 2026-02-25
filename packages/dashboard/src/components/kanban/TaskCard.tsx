@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { Clock, AlertCircle, FileCode } from 'lucide-react';
+import { Clock, AlertCircle, FileCode, FilePlus, FileEdit, FileX, FileType } from 'lucide-react';
 import { ClaudeIcon } from '@/components/icons/ClaudeIcon';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -87,12 +87,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       )}
 
       {/* Progress Bar */}
-      {task.progress !== undefined && task.progress > 0 && (
-        <div className="mb-3" role="progressbar" aria-valuenow={task.progress}>
-          <Progress value={task.progress} className="h-1" />
-          <p className="text-xs text-muted-foreground mt-1">{task.progress}%</p>
-        </div>
-      )}
+      <div className="mb-3" role="progressbar" aria-valuenow={task.progress ?? 0}>
+        <Progress value={task.progress ?? 0} className="h-1" />
+        <p className="text-xs text-muted-foreground mt-1">{task.progress ?? 0}%</p>
+      </div>
 
       {/* Agent Info */}
       <div className="flex items-center gap-2 mb-2">
@@ -102,15 +100,77 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
         </span>
       </div>
 
-      {/* Files Modified */}
-      {task.files && task.files.length > 0 && (
-        <div className="flex items-center gap-2 mb-2">
-          <FileCode className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
-          <span className="text-xs text-muted-foreground">
-            {task.files.length} file{task.files.length > 1 ? 's' : ''}
-          </span>
+      {/* Code Changes - Files Modified */}
+      {task.codeChanges && task.codeChanges.length > 0 ? (
+        <div className="mb-2 space-y-1">
+          <div className="flex items-center gap-2 mb-1">
+            <FileCode className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
+            <span className="text-xs font-medium text-muted-foreground">
+              {task.codeChanges.length} file{task.codeChanges.length > 1 ? 's' : ''} modified
+            </span>
+          </div>
+          <div className="space-y-0.5 pl-5">
+            {task.codeChanges.slice(0, 3).map((change, idx) => {
+              const fileName = change.filePath.split('/').pop() || change.filePath;
+              const ChangeIcon =
+                change.changeType === 'added' ? FilePlus :
+                change.changeType === 'deleted' ? FileX :
+                change.changeType === 'renamed' ? FileType :
+                FileEdit;
+              const iconColor =
+                change.changeType === 'added' ? 'text-emerald-500' :
+                change.changeType === 'deleted' ? 'text-pink-500' :
+                change.changeType === 'renamed' ? 'text-blue-500' :
+                'text-amber-500';
+
+              return (
+                <div key={idx} className="flex items-center gap-1.5 text-xs">
+                  <ChangeIcon className={`w-2.5 h-2.5 flex-shrink-0 ${iconColor}`} aria-hidden="true" />
+                  <span className="text-muted-foreground truncate font-mono" title={change.filePath}>
+                    {fileName}
+                  </span>
+                  {change.linesAdded !== undefined && change.linesDeleted !== undefined && (
+                    <span className="text-[10px] text-muted-foreground ml-auto flex-shrink-0">
+                      <span className="text-emerald-500">+{change.linesAdded}</span>
+                      {' '}
+                      <span className="text-pink-500">-{change.linesDeleted}</span>
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+            {task.codeChanges.length > 3 && (
+              <div className="text-xs text-muted-foreground italic">
+                +{task.codeChanges.length - 3} more file{task.codeChanges.length - 3 > 1 ? 's' : ''}
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      ) : task.files && task.files.length > 0 ? (
+        <div className="mb-2">
+          <div className="flex items-center gap-2 mb-1">
+            <FileCode className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
+            <span className="text-xs font-medium text-muted-foreground">
+              {task.files.length} file{task.files.length > 1 ? 's' : ''}
+            </span>
+          </div>
+          <div className="space-y-0.5 pl-5">
+            {task.files.slice(0, 3).map((file, idx) => {
+              const fileName = file.split('/').pop() || file;
+              return (
+                <div key={idx} className="text-xs text-muted-foreground font-mono truncate" title={file}>
+                  {fileName}
+                </div>
+              );
+            })}
+            {task.files.length > 3 && (
+              <div className="text-xs text-muted-foreground italic">
+                +{task.files.length - 3} more
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {/* Timestamps */}
       <div className="flex items-center gap-2 mb-1">

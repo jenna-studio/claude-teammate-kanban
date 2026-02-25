@@ -41,6 +41,43 @@ router.get('/active', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * POST /api/agents
+ * Register or update an agent
+ */
+router.post('/', asyncHandler(async (req, res) => {
+  const db = getDatabase();
+  const agentRepo = new AgentRepository(db);
+  const agent = agentRepo.upsert(req.body);
+
+  res.status(201).json({
+    success: true,
+    data: agent,
+  });
+}));
+
+/**
+ * PATCH /api/agents/:id
+ * Update agent fields
+ */
+router.patch('/:id', validate(schemas.agentId, 'params'), asyncHandler(async (req, res) => {
+  const db = getDatabase();
+  const agentRepo = new AgentRepository(db);
+
+  const agent = agentRepo.getById(req.params.id);
+  if (!agent) {
+    throw new HttpError(404, 'Agent not found');
+  }
+
+  agentRepo.update(req.params.id, req.body);
+  const updated = agentRepo.getById(req.params.id);
+
+  res.json({
+    success: true,
+    data: updated,
+  });
+}));
+
+/**
  * GET /api/agents/:id
  * Get agent by ID
  */

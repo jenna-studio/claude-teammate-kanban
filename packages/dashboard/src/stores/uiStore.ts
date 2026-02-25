@@ -11,6 +11,9 @@ interface UIStore {
   /** Task detail modal visibility */
   taskModalOpen: boolean;
 
+  /** Settings modal visibility */
+  settingsModalOpen: boolean;
+
   /** Filter state */
   filters: FilterState;
 
@@ -32,6 +35,12 @@ interface UIStore {
 
   /** Close task modal */
   closeTaskModal: () => void;
+
+  /** Open settings modal */
+  openSettingsModal: () => void;
+
+  /** Close settings modal */
+  closeSettingsModal: () => void;
 
   /** Set search filter */
   setSearchFilter: (search: string) => void;
@@ -72,6 +81,7 @@ const defaultFilters: FilterState = {
 export const useUIStore = create<UIStore>((set) => ({
   sidebarOpen: true,
   taskModalOpen: false,
+  settingsModalOpen: false,
   filters: defaultFilters,
   viewMode: 'kanban',
   theme: 'system',
@@ -90,6 +100,14 @@ export const useUIStore = create<UIStore>((set) => ({
 
   closeTaskModal: () => {
     set({ taskModalOpen: false });
+  },
+
+  openSettingsModal: () => {
+    set({ settingsModalOpen: true });
+  },
+
+  closeSettingsModal: () => {
+    set({ settingsModalOpen: false });
   },
 
   setSearchFilter: (search) => {

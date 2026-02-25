@@ -52,27 +52,27 @@ export function getStatusColor(status: TaskStatus): {
 } {
   const colors = {
     todo: {
-      bg: 'bg-pink-50',
+      bg: 'bg-pink-100',
       text: 'text-pink-700',
       border: 'border-pink-200',
     },
     claimed: {
-      bg: 'bg-purple-50',
+      bg: 'bg-purple-100',
       text: 'text-purple-700',
       border: 'border-purple-200',
     },
     in_progress: {
-      bg: 'bg-sky-50',
+      bg: 'bg-sky-100',
       text: 'text-sky-700',
       border: 'border-sky-200',
     },
     review: {
-      bg: 'bg-amber-50',
+      bg: 'bg-amber-100',
       text: 'text-amber-700',
       border: 'border-amber-200',
     },
     done: {
-      bg: 'bg-emerald-50',
+      bg: 'bg-emerald-100',
       text: 'text-emerald-700',
       border: 'border-emerald-200',
     },

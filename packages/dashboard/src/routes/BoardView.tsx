@@ -6,6 +6,7 @@ import React from 'react';
 import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 import { AgentList } from '@/components/agent/AgentList';
 import { TaskDetailModal } from '@/components/task/TaskDetailModal';
+import { SettingsModal } from '@/components/settings/SettingsModal';
 import { Header } from '@/components/common/Header';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useUIStore } from '@/stores/uiStore';
@@ -56,13 +57,13 @@ export const BoardView: React.FC<BoardViewProps> = ({ boardId }) => {
         >
           <div className="w-80 flex flex-col h-full flex-shrink-0">
             <div className="p-4 border-b">
-              <h2 className="font-semibold text-lg" style={{ color: '#9B6ED8' }}>Active Agents</h2>
+              <h2 className="font-semibold text-lg" style={{ color: '#9B6ED8' }}>Agents</h2>
               <p className="text-sm text-muted-foreground">
                 Monitoring agent activity
               </p>
             </div>
             <div className="flex-1 p-4 overflow-y-auto">
-              <AgentList showOnlyActive />
+              <AgentList />
             </div>
           </div>
         </aside>
@@ -75,6 +76,9 @@ export const BoardView: React.FC<BoardViewProps> = ({ boardId }) => {
 
       {/* Task Detail Modal */}
       <TaskDetailModal />
+
+      {/* Settings Modal */}
+      <SettingsModal />
     </div>
   );
 };

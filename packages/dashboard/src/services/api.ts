@@ -14,7 +14,18 @@ import type {
 /**
  * Base API configuration
  */
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+function getApiBaseUrl(): string {
+  try {
+    const stored = localStorage.getItem('agent-track-settings');
+    if (stored) {
+      const settings = JSON.parse(stored);
+      if (settings.apiUrl) return settings.apiUrl;
+    }
+  } catch { /* ignore */ }
+  return import.meta.env.VITE_API_URL || 'http://localhost:3000';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Generic fetch wrapper with error handling
