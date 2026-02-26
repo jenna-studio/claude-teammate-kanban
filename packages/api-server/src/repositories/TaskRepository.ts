@@ -109,7 +109,8 @@ export class TaskRepository {
         blocked_by as blockedBy,
         tags,
         error_message as errorMessage,
-        retry_count as retryCount
+        retry_count as retryCount,
+        commit_hash as commitHash
       FROM agent_tasks
       WHERE 1=1
     `;
@@ -141,7 +142,18 @@ export class TaskRepository {
     const stmt = this.db.prepare(query);
     const rows = stmt.all(...params) as any[];
 
-    return rows.map(row => this.mapRowToTask(row));
+    return rows.map(row => {
+      const task = this.mapRowToTask(row);
+      task.codeChanges = this.getCodeChanges(task.id);
+      if (task.codeChanges && task.codeChanges.length > 0) {
+        task.diffSummary = {
+          filesChanged: task.codeChanges.length,
+          insertions: task.codeChanges.reduce((sum, c) => sum + (c.linesAdded || 0), 0),
+          deletions: task.codeChanges.reduce((sum, c) => sum + (c.linesDeleted || 0), 0),
+        };
+      }
+      return task;
+    });
   }
 
   /**

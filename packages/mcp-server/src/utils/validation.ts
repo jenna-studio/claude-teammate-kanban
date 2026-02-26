@@ -17,15 +17,14 @@ export function validateNonEmptyString(value: string | null | undefined, fieldNa
 }
 
 /**
- * Validates that a value is a valid UUID
+ * Validates that a value is a valid identifier (non-empty string)
  * @param value - The value to validate
  * @param fieldName - The name of the field being validated
- * @throws {ValidationError} If the value is not a valid UUID
+ * @throws {ValidationError} If the value is empty
  */
 export function validateUUID(value: string | null | undefined, fieldName: string): void {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (!value || !uuidRegex.test(value)) {
-    throw new ValidationError(`${fieldName} must be a valid UUID`, fieldName);
+  if (!value || value.trim().length === 0) {
+    throw new ValidationError(`${fieldName} must be a non-empty string`, fieldName);
   }
 }
 
