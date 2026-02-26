@@ -187,6 +187,27 @@ class APIClient {
   }
 
   /**
+   * Fetch tasks for an agent
+   */
+  async getAgentTasks(agentId: string): Promise<AgentTask[]> {
+    return fetchAPI<AgentTask[]>(`/api/agents/${agentId}/tasks`);
+  }
+
+  /**
+   * Fetch agent statistics
+   */
+  async getAgentStatistics(agentId: string): Promise<{
+    totalTasks: number;
+    completedTasks: number;
+    failedTasks: number;
+    inProgressTasks: number;
+    averageDuration: number;
+    totalTokensUsed: number;
+  }> {
+    return fetchAPI(`/api/agents/${agentId}/statistics`);
+  }
+
+  /**
    * Fetch comments for a task
    */
   async getComments(taskId: string): Promise<Comment[]> {

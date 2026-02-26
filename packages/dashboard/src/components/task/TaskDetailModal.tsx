@@ -4,7 +4,7 @@
  */
 import React, { useEffect } from 'react';
 import { FileCode, Clock, AlertCircle, CheckCircle, GitCommit, MessageSquare } from 'lucide-react';
-import { ClaudeIcon } from '@/components/icons/ClaudeIcon';
+import { AgentIcon } from '@/components/icons/AgentIcon';
 import {
   Dialog,
   DialogContent,
@@ -117,7 +117,7 @@ export const TaskDetailModal: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <ClaudeIcon size={16} color="#9B6ED8" />
+                <AgentIcon agentName={task.agentName} size={16} color="#9B6ED8" />
                 <h4 className="font-semibold text-sm">Agent</h4>
               </div>
               <p className="text-sm">{task.agentName}</p>
@@ -297,7 +297,7 @@ export const TaskDetailModal: React.FC = () => {
                   >
                     <div className="flex items-center gap-2 mb-1">
                       {comment.authorType === 'agent' ? (
-                        <ClaudeIcon size={14} color="#9B6ED8" />
+                        <AgentIcon agentName={comment.author} size={14} color="#9B6ED8" />
                       ) : (
                         <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
                       )}

@@ -291,10 +291,10 @@ Task cards now display comprehensive code modification details:
 
 **When code is modified, you'll see:**
 - **File-level changes** with color-coded icons:
-  - 🟢 **Green +** for newly added files
-  - 🟡 **Amber ~** for modified files
-  - 🔴 **Red ×** for deleted files
-  - 🔵 **Blue →** for renamed files
+  - 🟢 **Green**: for newly added files
+  - 🟡 **Amber**: for modified files
+  - 🔴 **Red**: for deleted files
+  - 🔵 **Blue**: for renamed files
 - **File names** in monospace font for better readability
 - **Line counts** per file showing additions (+X) and deletions (-Y)
 - **Smart truncation** - First 3 files shown with "+N more files" indicator

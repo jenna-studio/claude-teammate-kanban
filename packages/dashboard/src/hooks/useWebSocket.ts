@@ -6,7 +6,8 @@ import { useEffect, useRef, useState } from 'react';
 import { wsClient, ConnectionState } from '@/services/websocket';
 import { useTaskStore } from '@/stores/taskStore';
 import { useAgentStore } from '@/stores/agentStore';
-import type { ServerMessage } from '@/types';
+import { useBoardStore } from '@/stores/boardStore';
+import type { ServerMessage, Board } from '@/types';
 
 /**
  * Hook for managing WebSocket connection to a specific board
@@ -18,6 +19,7 @@ export function useWebSocket(boardId: string | null) {
 
   const { addTask, updateTask, removeTask } = useTaskStore();
   const { updateAgent } = useAgentStore();
+  const { addBoard } = useBoardStore();
 
   // Track if we're already subscribed to prevent duplicate subscriptions
   const subscribedRef = useRef(false);
@@ -91,6 +93,12 @@ export function useWebSocket(boardId: string | null) {
       case 'comment_added':
         // Could be handled by a comment store or trigger a refetch
         console.log('Comment added:', message.comment);
+        break;
+
+      case 'board_created':
+        // Add the new board to the store and navigate to it
+        addBoard(message.board as Board);
+        window.location.href = `/board/${(message.board as Board).id}`;
         break;
 
       default:

@@ -33,7 +33,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const { currentBoard, columns, loading, error, fetchBoard } = useBoard(boardId);
   const { tasks, moveTask, fetchTasks } = useTasks(boardId);
   const { selectTask } = useTaskStore();
-  const { openTaskModal } = useUIStore();
+  const { openTaskModal, sidebarOpen } = useUIStore();
 
   const [activeTask, setActiveTask] = React.useState<AgentTask | null>(null);
 
@@ -127,7 +127,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       {/* Kanban Board */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="flex gap-4 p-6 h-full">
+          <div className={cn('flex gap-4 h-full', sidebarOpen ? 'p-6 pr-10' : 'p-6')}>
             {columns.map((column) => {
               const columnTasks = tasks.filter(
                 (task) => task.status === column.id

@@ -48,13 +48,11 @@ export function formatDateTime(date: Date | string): string {
  * Format a duration in seconds to human-readable string
  */
 export function formatDurationSeconds(seconds: number): string {
-  const duration = intervalToDuration({ start: 0, end: seconds * 1000 });
-
-  return formatDuration(duration, {
-    format: ['hours', 'minutes', 'seconds'],
-    zero: false,
-    delimiter: ', ',
-  });
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
 /**

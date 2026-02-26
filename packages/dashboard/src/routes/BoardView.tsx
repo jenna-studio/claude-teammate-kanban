@@ -6,6 +6,7 @@ import React from 'react';
 import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 import { AgentList } from '@/components/agent/AgentList';
 import { TaskDetailModal } from '@/components/task/TaskDetailModal';
+import { AgentDetailModal } from '@/components/agent/AgentDetailModal';
 import { SettingsModal } from '@/components/settings/SettingsModal';
 import { Header } from '@/components/common/Header';
 import { useWebSocket } from '@/hooks/useWebSocket';
@@ -78,6 +79,9 @@ export const BoardView: React.FC<BoardViewProps> = ({ boardId }) => {
 
       {/* Task Detail Modal */}
       <TaskDetailModal />
+
+      {/* Agent Detail Modal */}
+      <AgentDetailModal />
 
       {/* Settings Modal */}
       <SettingsModal />

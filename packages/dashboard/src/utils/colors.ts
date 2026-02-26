@@ -91,19 +91,19 @@ export function getAgentStatusColor(status: AgentStatus): {
 } {
   const colors = {
     active: {
-      bg: 'bg-emerald-50',
+      bg: 'bg-emerald-100',
       text: 'text-emerald-700',
       dot: 'bg-[#5DD9A0]',
     },
     idle: {
-      bg: 'bg-amber-50',
+      bg: 'bg-amber-100',
       text: 'text-amber-700',
       dot: 'bg-[#FFD966]',
     },
     offline: {
-      bg: 'bg-purple-50',
-      text: 'text-purple-400',
-      dot: 'bg-purple-300',
+      bg: 'bg-purple-100',
+      text: 'text-purple-600',
+      dot: 'bg-purple-400',
     },
   };
 

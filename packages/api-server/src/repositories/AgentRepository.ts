@@ -108,10 +108,16 @@ export class AgentRepository {
   /**
    * Update agent fields
    */
-  update(id: string, data: Partial<{ status: string; lastHeartbeat: string }>): void {
+  update(id: string, data: Partial<{ name: string; status: string; lastHeartbeat: string }>): void {
     const fields: string[] = [];
     const values: any[] = [];
 
+    if (data.name) {
+      fields.push('name = ?');
+      values.push(data.name);
+      // Also update the agent name on all its tasks
+      this.db.prepare('UPDATE agent_tasks SET agent_name = ? WHERE agent_id = ?').run(data.name, id);
+    }
     if (data.status) {
       fields.push('status = ?');
       values.push(data.status);
@@ -229,7 +235,7 @@ export class AgentRepository {
         COUNT(*) as totalTasks,
         SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as completedTasks,
         SUM(CASE WHEN error_message IS NOT NULL THEN 1 ELSE 0 END) as failedTasks,
-        SUM(CASE WHEN status IN ('claimed', 'in_progress') THEN 1 ELSE 0 END) as inProgressTasks,
+        SUM(CASE WHEN status IN ('claimed', 'in_progress', 'review') THEN 1 ELSE 0 END) as inProgressTasks,
         AVG(CASE WHEN actual_duration IS NOT NULL THEN actual_duration ELSE NULL END) as averageDuration,
         SUM(COALESCE(tokens_used, 0)) as totalTokensUsed
       FROM agent_tasks
@@ -255,8 +261,8 @@ export class AgentRepository {
     // Compute real-time statistics from tasks
     const stats = this.computeAgentStats(row.id);
 
-    // Compute agent status based on last heartbeat
-    const status = this.computeAgentStatus(row.lastHeartbeat, stats.tasksInProgress);
+    // Compute agent status based on heartbeat + task activity
+    const status = this.computeAgentStatus(row.lastHeartbeat, stats.tasksInProgress, row.id);
 
     return {
       id: row.id,
@@ -276,26 +282,50 @@ export class AgentRepository {
   }
 
   /**
-   * Compute agent status based on last heartbeat timestamp
-   * - active: heartbeat within last 5 minutes
-   * - idle: heartbeat between 5–10 minutes ago
-   * - offline: no heartbeat in last 10 minutes
+   * Compute agent status based on heartbeat and task activity.
+   * - active: heartbeat within 5 min OR has recently updated in-progress tasks
+   * - idle: heartbeat within 10 min OR has in-progress/claimed tasks (stale but not done)
+   * - offline: no heartbeat and no active tasks
    */
-  private computeAgentStatus(lastHeartbeat: number, _tasksInProgress: number): AgentStatus {
+  private computeAgentStatus(lastHeartbeat: number, tasksInProgress: number, agentId?: string): AgentStatus {
     const now = Date.now();
     const heartbeatAge = now - lastHeartbeat;
     const fiveMinutes = 5 * 60 * 1000;
     const tenMinutes = 10 * 60 * 1000;
 
-    if (heartbeatAge > tenMinutes) {
-      return AgentStatus.OFFLINE;
+    // Recent heartbeat — trust it
+    if (heartbeatAge <= fiveMinutes) {
+      return AgentStatus.ACTIVE;
     }
-
-    if (heartbeatAge > fiveMinutes) {
+    if (heartbeatAge <= tenMinutes) {
       return AgentStatus.IDLE;
     }
 
-    return AgentStatus.ACTIVE;
+    // No recent heartbeat — check task activity
+    if (agentId) {
+      const recentTask = this.db.prepare(`
+        SELECT MAX(updated_at) as lastUpdate
+        FROM agent_tasks
+        WHERE agent_id = ? AND status IN ('claimed', 'in_progress', 'review')
+      `).get(agentId) as any;
+
+      if (recentTask?.lastUpdate) {
+        const taskAge = now - recentTask.lastUpdate;
+        if (taskAge <= fiveMinutes) {
+          return AgentStatus.ACTIVE;
+        }
+        if (taskAge <= tenMinutes) {
+          return AgentStatus.IDLE;
+        }
+      }
+    }
+
+    // Fallback: if agent still has in-progress tasks, show as idle
+    if (tasksInProgress > 0) {
+      return AgentStatus.IDLE;
+    }
+
+    return AgentStatus.OFFLINE;
   }
 
   /**
@@ -312,7 +342,7 @@ export class AgentRepository {
         COUNT(*) as totalTasks,
         SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as completedTasks,
         SUM(CASE WHEN error_message IS NOT NULL AND status = 'done' THEN 1 ELSE 0 END) as failedTasks,
-        SUM(CASE WHEN status IN ('claimed', 'in_progress') THEN 1 ELSE 0 END) as inProgressTasks,
+        SUM(CASE WHEN status IN ('claimed', 'in_progress', 'review') THEN 1 ELSE 0 END) as inProgressTasks,
         AVG(CASE WHEN actual_duration IS NOT NULL AND status = 'done' THEN actual_duration ELSE NULL END) as averageDuration
       FROM agent_tasks
       WHERE agent_id = ?

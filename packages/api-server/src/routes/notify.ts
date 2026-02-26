@@ -39,7 +39,11 @@ router.post('/', (req: Request, res: Response) => {
   // Map MCP events to WebSocket message types
   const message = { type: event, ...data };
 
-  if (boardId) {
+  // board_created events must be broadcast to ALL clients since no client
+  // is subscribed to the new board yet
+  if (event === 'board_created') {
+    wsServer.broadcastAll(message);
+  } else if (boardId) {
     wsServer.broadcast(boardId, message);
   } else {
     wsServer.broadcastAll(message);

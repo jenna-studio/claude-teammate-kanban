@@ -56,7 +56,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       style={{
         boxShadow: `0 2px 12px ${palette.accent}18`,
         backgroundColor: `${palette.header}30`,
-        border: `1px solid ${palette.accent}25`,
+        border: `2px solid ${palette.accent}50`,
         '--column-accent': palette.accent,
       } as React.CSSProperties}
     >

@@ -14,6 +14,10 @@ interface UIStore {
   /** Settings modal visibility */
   settingsModalOpen: boolean;
 
+  /** Agent detail modal */
+  agentModalOpen: boolean;
+  selectedAgentId: string | null;
+
   /** Filter state */
   filters: FilterState;
 
@@ -41,6 +45,12 @@ interface UIStore {
 
   /** Close settings modal */
   closeSettingsModal: () => void;
+
+  /** Open agent detail modal */
+  openAgentModal: (agentId: string) => void;
+
+  /** Close agent detail modal */
+  closeAgentModal: () => void;
 
   /** Set search filter */
   setSearchFilter: (search: string) => void;
@@ -82,6 +92,8 @@ export const useUIStore = create<UIStore>((set) => ({
   sidebarOpen: true,
   taskModalOpen: false,
   settingsModalOpen: false,
+  agentModalOpen: false,
+  selectedAgentId: null,
   filters: defaultFilters,
   viewMode: 'kanban',
   theme: 'system',
@@ -108,6 +120,14 @@ export const useUIStore = create<UIStore>((set) => ({
 
   closeSettingsModal: () => {
     set({ settingsModalOpen: false });
+  },
+
+  openAgentModal: (agentId) => {
+    set({ agentModalOpen: true, selectedAgentId: agentId });
+  },
+
+  closeAgentModal: () => {
+    set({ agentModalOpen: false, selectedAgentId: null });
   },
 
   setSearchFilter: (search) => {

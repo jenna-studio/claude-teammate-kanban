@@ -294,7 +294,8 @@ export type ServerMessage =
   | { type: 'task_deleted'; taskId: string }
   | { type: 'agent_status_changed'; agent: Agent }
   | { type: 'activity_logged'; log: ActivityLog }
-  | { type: 'comment_added'; comment: Comment };
+  | { type: 'comment_added'; comment: Comment }
+  | { type: 'board_created'; board: Board };
 
 /**
  * UI filter state

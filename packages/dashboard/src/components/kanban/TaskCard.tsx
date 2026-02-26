@@ -2,10 +2,10 @@
  * TaskCard Component
  * Displays individual task information in the kanban board
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { Clock, AlertCircle, FileCode, FilePlus, FileEdit, FileX, FileType } from 'lucide-react';
-import { ClaudeIcon } from '@/components/icons/ClaudeIcon';
+import { Clock, AlertCircle, FileCode, FilePlus, FileEdit, FileX, FileType, GitCommit } from 'lucide-react';
+import { AgentIcon } from '@/components/icons/AgentIcon';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
@@ -31,6 +31,8 @@ export interface TaskCardProps {
  * - Error states
  */
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
+  const [copied, setCopied] = useState(false);
+
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: task.id,
@@ -67,17 +69,31 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       tabIndex={0}
       aria-label={`Task: ${task.title}`}
     >
-      {/* Header: Title + Importance Indicator */}
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <h4 className="font-medium text-sm flex-1 line-clamp-2">
-          {task.title}
-        </h4>
+      {/* Task ID + Importance Indicator */}
+      <div className="flex items-center justify-between mb-1.5 gap-2">
+        <span
+          className="text-[10px] font-mono text-muted-foreground/60 cursor-pointer hover:text-muted-foreground transition-colors"
+          title={copied ? 'Copied!' : `Click to copy: ${task.id}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(task.id);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          }}
+        >
+          {copied ? 'Copied!' : `#${task.id.replace(/-/g, '').slice(-8)}`}
+        </span>
         <div
           className={cn('w-2 h-2 rounded-full flex-shrink-0', importanceColors.dot)}
           title={`${task.importance} priority`}
           aria-label={`${task.importance} priority`}
         />
       </div>
+
+      {/* Title */}
+      <h4 className="font-medium text-sm line-clamp-2 mb-2">
+        {task.title}
+      </h4>
 
       {/* Current Action (if in progress) */}
       {task.currentAction && (
@@ -94,7 +110,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
 
       {/* Agent Info */}
       <div className="flex items-center gap-2 mb-2">
-        <ClaudeIcon size={12} color="#9B6ED8" />
+        <AgentIcon agentName={task.agentName} size={12} color="#9B6ED8" />
         <span className="text-xs text-muted-foreground truncate">
           {task.agentName}
         </span>
@@ -203,12 +219,28 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
         </div>
       )}
 
-      {/* Lines Changed */}
-      {task.linesChanged && (
-        <div className="text-xs text-muted-foreground">
-          <span className="text-emerald-500">+{task.linesChanged.added}</span>
-          {' / '}
-          <span className="text-pink-500">-{task.linesChanged.removed}</span>
+      {/* Commit Hash + Diff Summary */}
+      {(task.commitHash || task.diffSummary || task.linesChanged) && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+          {task.commitHash && (
+            <span className="flex items-center gap-1 font-mono text-[10px] px-1.5 py-0.5 rounded bg-muted/60">
+              <GitCommit className="w-2.5 h-2.5" aria-hidden="true" />
+              {task.commitHash.slice(0, 7)}
+            </span>
+          )}
+          {task.diffSummary ? (
+            <span>
+              <span className="text-emerald-500">+{task.diffSummary.insertions}</span>
+              {' / '}
+              <span className="text-pink-500">-{task.diffSummary.deletions}</span>
+            </span>
+          ) : task.linesChanged ? (
+            <span>
+              <span className="text-emerald-500">+{task.linesChanged.added}</span>
+              {' / '}
+              <span className="text-pink-500">-{task.linesChanged.removed}</span>
+            </span>
+          ) : null}
         </div>
       )}
 

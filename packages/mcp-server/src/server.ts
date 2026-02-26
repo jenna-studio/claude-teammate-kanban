@@ -437,14 +437,19 @@ export class AgentKanbanMCPServer extends EventEmitter {
     this.boardRepo.create(board);
 
     // Create default columns
-    for (const column of DEFAULT_COLUMNS) {
+    const columns = DEFAULT_COLUMNS.map((column) => ({
+      ...column,
+      id: randomUUID(),
+    }));
+
+    for (const column of columns) {
       this.boardRepo.createColumn(boardId, column);
     }
 
     this.emit('board:created', board);
     notifyApiServer('board_created', boardId, { board });
 
-    return { boardId, columns: DEFAULT_COLUMNS };
+    return { boardId, columns };
   }
 
   private listBoards(): { boards: Board[] } {
@@ -518,7 +523,7 @@ export class AgentKanbanMCPServer extends EventEmitter {
     };
 
     this.sessionRepo.create(session);
-    this.agentRepo.updateStatus(args.agentId, 'active');
+    this.agentRepo.updateHeartbeat(args.agentId);
 
     this.emit('session:started', session);
 
@@ -546,6 +551,9 @@ export class AgentKanbanMCPServer extends EventEmitter {
     if (!agent) {
       throw new Error(`Agent not found: ${session.agentId}`);
     }
+
+    // Keep agent active on any task activity
+    this.agentRepo.updateHeartbeat(session.agentId);
 
     const now = new Date();
 
@@ -584,6 +592,9 @@ export class AgentKanbanMCPServer extends EventEmitter {
       throw new Error(`Task not found: ${args.taskId}`);
     }
 
+    // Keep agent active on any task activity
+    if (task.agentId) this.agentRepo.updateHeartbeat(task.agentId);
+
     const updates: Partial<AgentTask> = {
       status: args.status,
       currentAction: args.currentAction,
@@ -608,6 +619,9 @@ export class AgentKanbanMCPServer extends EventEmitter {
     if (!task) {
       throw new Error(`Task not found: ${args.taskId}`);
     }
+
+    // Keep agent active on any task activity
+    if (task.agentId) this.agentRepo.updateHeartbeat(task.agentId);
 
     const updates: Partial<AgentTask> = {
       progress: args.progress,
@@ -651,9 +665,13 @@ export class AgentKanbanMCPServer extends EventEmitter {
       throw new Error(`Task not found: ${args.taskId}`);
     }
 
+    // Keep agent active on any task activity
+    if (task.agentId) this.agentRepo.updateHeartbeat(task.agentId);
+
     const completedAt = new Date();
-    const actualDuration = task.startedAt
-      ? Math.floor((completedAt.getTime() - task.startedAt.getTime()) / 1000)
+    const referenceTime = task.startedAt || task.claimedAt || task.createdAt;
+    const actualDuration = referenceTime
+      ? Math.floor((completedAt.getTime() - referenceTime.getTime()) / 1000)
       : undefined;
 
     this.taskRepo.update(args.taskId, {
@@ -684,6 +702,9 @@ export class AgentKanbanMCPServer extends EventEmitter {
     if (!task) {
       throw new Error(`Task not found: ${args.taskId}`);
     }
+
+    // Keep agent active on any task activity
+    if (task.agentId) this.agentRepo.updateHeartbeat(task.agentId);
 
     this.taskRepo.update(args.taskId, {
       errorMessage: args.errorMessage,

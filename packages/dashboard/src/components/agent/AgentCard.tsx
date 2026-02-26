@@ -4,12 +4,13 @@
  */
 import React from 'react';
 import { Activity } from 'lucide-react';
-import { ClaudeIcon } from '@/components/icons/ClaudeIcon';
+import { AgentIcon } from '@/components/icons/AgentIcon';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Agent } from '@/types';
 import { formatRelativeTime } from '@/utils/date';
 import { getAgentStatusColor } from '@/utils/colors';
+import { useUIStore } from '@/stores/uiStore';
 import { cn } from '@/utils/cn';
 
 export interface AgentCardProps {
@@ -22,11 +23,16 @@ export interface AgentCardProps {
  */
 export const AgentCard: React.FC<AgentCardProps> = ({ agent, className }) => {
   const statusColors = getAgentStatusColor(agent.status);
+  const { openAgentModal } = useUIStore();
 
   return (
     <Card
-      className={cn('shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 backdrop-blur-sm border-white/60', className)}
+      className={cn('shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 backdrop-blur-sm border-white/60 cursor-pointer', className)}
       style={{ background: 'linear-gradient(135deg, #FF7BA520, #9B6ED820, #52C4E820)' }}
+      onClick={() => openAgentModal(agent.id)}
+      role="button"
+      tabIndex={0}
+      aria-label={`View details for ${agent.name}`}
     >
       <CardContent className="p-4">
         {/* Agent Header */}
@@ -36,7 +42,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, className }) => {
             className="flex items-center justify-center w-10 h-10 rounded-full"
             style={{ background: 'linear-gradient(135deg, #FF7BA530, #9B6ED830)' }}
           >
-            <ClaudeIcon size={20} color="#9B6ED8" />
+            <AgentIcon agentName={agent.name} size={20} color="#9B6ED8" />
           </div>
 
           {/* Agent Info */}
