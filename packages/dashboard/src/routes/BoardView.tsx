@@ -67,7 +67,7 @@ export const BoardView: React.FC<BoardViewProps> = ({ boardId }) => {
                           <p className="text-sm text-muted-foreground">Monitoring agent activity</p>
                       </div>
                       <div className="flex-1 p-4 overflow-y-auto agent-sidebar-scroll">
-                          <AgentList />
+                          <AgentList boardId={boardId} />
                       </div>
                   </div>
               </aside>

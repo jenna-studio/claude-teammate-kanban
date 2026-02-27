@@ -168,7 +168,7 @@ export class AgentRepository {
    * @param status - Optional status filter
    * @returns Array of tasks
    */
-  getAgentTasks(agentId: string, status?: string): AgentTask[] {
+  getAgentTasks(agentId: string, status?: string, boardId?: string): AgentTask[] {
     let query = `
       SELECT
         id,
@@ -207,6 +207,11 @@ export class AgentRepository {
     if (status) {
       query += ' AND status = ?';
       params.push(status);
+    }
+
+    if (boardId) {
+      query += ' AND board_id = ?';
+      params.push(boardId);
     }
 
     query += ' ORDER BY updated_at DESC';

@@ -11,16 +11,18 @@ import { cn } from '@/utils/cn';
 export interface AgentListProps {
   className?: string;
   showOnlyActive?: boolean;
+  boardId?: string;
 }
 
 /**
- * AgentList displays all agents or only active ones
+ * AgentList displays agents scoped to a board (or all agents if no boardId)
  */
 export const AgentList: React.FC<AgentListProps> = ({
   className,
   showOnlyActive = false,
+  boardId,
 }) => {
-  const { agents, activeAgents, loading, error, fetchAgents } = useAgents();
+  const { agents, activeAgents, loading, error, fetchAgents } = useAgents(boardId);
 
   useEffect(() => {
     fetchAgents();

@@ -13,11 +13,12 @@ import { useSettingsStore } from '@/stores/settingsStore';
 import { cn } from '@/utils/cn';
 
 /**
- * Extract a display-friendly project name from a GitHub repo URL or directory path
+ * Extract a display-friendly project name from the board.
+ * Priority: GitHub repo name > directory name from projectPath > board name
  */
-function getProjectName(board: { repository?: string; projectPath?: string } | undefined): {
+function getProjectName(board: { name?: string; repository?: string; projectPath?: string } | undefined): {
   name: string | null;
-  source: 'github' | 'directory' | null;
+  source: 'github' | 'directory' | 'board' | null;
 } {
   if (!board) return { name: null, source: null };
 
@@ -38,6 +39,11 @@ function getProjectName(board: { repository?: string; projectPath?: string } | u
     // Use the last directory name from the path
     const dirName = board.projectPath.split('/').filter(Boolean).pop();
     if (dirName) return { name: dirName, source: 'directory' };
+  }
+
+  // Fall back to the board name itself
+  if (board.name) {
+    return { name: board.name, source: 'board' };
   }
 
   return { name: null, source: null };

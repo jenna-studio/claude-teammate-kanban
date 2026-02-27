@@ -42,6 +42,10 @@ export class AgentKanbanMCPServer extends EventEmitter {
     // Initialize database
     initDatabase(dbPath ? { path: dbPath } : undefined);
 
+    // Clean slate: remove stale agents (and their tasks/sessions via CASCADE)
+    // so the dashboard only shows agents from the current session.
+    this.cleanStaleData();
+
     // Initialize repositories
     this.taskRepo = new TaskRepository();
     this.agentRepo = new AgentRepository();
@@ -62,6 +66,21 @@ export class AgentKanbanMCPServer extends EventEmitter {
     );
 
     this.setupHandlers();
+  }
+
+  /**
+   * Remove all agents (and cascade-delete their tasks, sessions, comments,
+   * code changes) so each MCP connection starts from a blank slate.
+   */
+  private cleanStaleData() {
+    try {
+      const db = getDatabase();
+      db.exec('DELETE FROM agents');
+      db.exec('DELETE FROM activity_logs');
+      console.error('[MCP] Cleared stale agents and related data');
+    } catch (error) {
+      console.error('[MCP] Warning: failed to clean stale data:', error);
+    }
   }
 
   private setupHandlers() {

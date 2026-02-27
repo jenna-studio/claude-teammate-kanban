@@ -10,6 +10,7 @@
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { AgentKanbanMCPServer } from './server.js';
+import { launchDashboard } from './utils/launcher.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,7 +21,11 @@ const dbPath = process.env.DATABASE_PATH || defaultDbPath;
 
 const server = new AgentKanbanMCPServer(dbPath);
 
-server.run().catch((error) => {
+server.run().then(() => {
+  // Once the MCP server is connected, launch the API server,
+  // dashboard dev server, and open the browser automatically.
+  launchDashboard();
+}).catch((error) => {
   console.error('Fatal error:', error);
   process.exit(1);
 });

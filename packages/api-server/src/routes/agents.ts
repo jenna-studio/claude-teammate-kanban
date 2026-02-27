@@ -111,7 +111,8 @@ router.get('/:id/tasks', validate(schemas.agentId, 'params'), asyncHandler(async
   }
 
   const status = req.query.status as string | undefined;
-  const tasks = agentRepo.getAgentTasks(req.params.id, status);
+  const boardId = req.query.boardId as string | undefined;
+  const tasks = agentRepo.getAgentTasks(req.params.id, status, boardId);
 
   res.json({
     success: true,

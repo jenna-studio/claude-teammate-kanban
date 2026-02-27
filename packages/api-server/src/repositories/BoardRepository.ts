@@ -148,11 +148,11 @@ export class BoardRepository {
   }
 
   /**
-   * Get agents working on a board
+   * Get agents working on a board (have tasks or active sessions on this board)
    * @param boardId - Board ID
    * @returns Array of agents
    */
-  private getBoardAgents(boardId: string): Agent[] {
+  getBoardAgents(boardId: string): Agent[] {
     const stmt = this.db.prepare(`
       SELECT DISTINCT
         a.id,
@@ -168,11 +168,14 @@ export class BoardRepository {
         a.last_heartbeat as lastHeartbeat,
         a.metadata
       FROM agents a
-      INNER JOIN agent_tasks t ON a.id = t.agent_id
-      WHERE t.board_id = ?
+      WHERE a.id IN (
+        SELECT agent_id FROM agent_tasks WHERE board_id = ?
+        UNION
+        SELECT agent_id FROM sessions WHERE board_id = ?
+      )
     `);
 
-    const rows = stmt.all(boardId) as any[];
+    const rows = stmt.all(boardId, boardId) as any[];
     return rows.map(row => this.mapRowToAgent(row));
   }
 

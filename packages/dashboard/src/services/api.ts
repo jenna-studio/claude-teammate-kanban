@@ -180,6 +180,13 @@ class APIClient {
   }
 
   /**
+   * Fetch agents scoped to a specific board
+   */
+  async getBoardAgents(boardId: string): Promise<Agent[]> {
+    return fetchAPI<Agent[]>(`/api/boards/${boardId}/agents`);
+  }
+
+  /**
    * Fetch a specific agent
    */
   async getAgent(agentId: string): Promise<Agent> {
@@ -187,10 +194,11 @@ class APIClient {
   }
 
   /**
-   * Fetch tasks for an agent
+   * Fetch tasks for an agent, optionally scoped to a board
    */
-  async getAgentTasks(agentId: string): Promise<AgentTask[]> {
-    return fetchAPI<AgentTask[]>(`/api/agents/${agentId}/tasks`);
+  async getAgentTasks(agentId: string, boardId?: string): Promise<AgentTask[]> {
+    const query = boardId ? `?boardId=${boardId}` : '';
+    return fetchAPI<AgentTask[]>(`/api/agents/${agentId}/tasks${query}`);
   }
 
   /**

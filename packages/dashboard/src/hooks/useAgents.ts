@@ -8,8 +8,9 @@ import { apiClient } from '@/services/api';
 
 /**
  * Hook for managing agents
+ * @param boardId - Optional board ID to scope agents to a specific board
  */
-export function useAgents() {
+export function useAgents(boardId?: string) {
   const {
     agents,
     loading,
@@ -22,14 +23,16 @@ export function useAgents() {
   } = useAgentStore();
 
   /**
-   * Fetch all agents
+   * Fetch agents — scoped to board when boardId is provided
    */
   const fetchAgents = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const fetchedAgents = await apiClient.getAgents();
+      const fetchedAgents = boardId
+        ? await apiClient.getBoardAgents(boardId)
+        : await apiClient.getAgents();
       setAgents(fetchedAgents);
     } catch (err) {
       const errorMessage =
@@ -39,7 +42,7 @@ export function useAgents() {
     } finally {
       setLoading(false);
     }
-  }, [setAgents, setLoading, setError]);
+  }, [boardId, setAgents, setLoading, setError]);
 
   /**
    * Fetch a specific agent

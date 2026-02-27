@@ -44,6 +44,27 @@ router.get('/:id', validate(schemas.boardId, 'params'), asyncHandler(async (req,
 }));
 
 /**
+ * GET /api/boards/:id/agents
+ * Get agents working on this board (have tasks or sessions on this board)
+ */
+router.get('/:id/agents', validate(schemas.boardId, 'params'), asyncHandler(async (req, res) => {
+  const db = getDatabase();
+  const boardRepo = new BoardRepository(db);
+
+  const board = boardRepo.getById(req.params.id);
+  if (!board) {
+    throw new HttpError(404, 'Board not found');
+  }
+
+  const agents = boardRepo.getBoardAgents(req.params.id);
+
+  res.json({
+    success: true,
+    data: agents,
+  });
+}));
+
+/**
  * GET /api/boards/:id/statistics
  * Get board statistics
  */

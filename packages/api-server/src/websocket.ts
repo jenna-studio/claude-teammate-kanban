@@ -112,18 +112,20 @@ export class RealtimeServer {
   private handleClientMessage(ws: ExtendedWebSocket, message: ClientMessage): void {
     ws.lastHeartbeat = Date.now();
 
-    switch (message.type) {
+    const msgType = (message as any).type as string;
+
+    switch (msgType) {
       case 'subscribe':
-        if (message.boardId) {
-          this.subscribe(message.boardId, ws);
-          console.log(`[WebSocket] Client ${ws.clientId} subscribed to board: ${message.boardId}`);
+        if ((message as any).boardId) {
+          this.subscribe((message as any).boardId, ws);
+          console.log(`[WebSocket] Client ${ws.clientId} subscribed to board: ${(message as any).boardId}`);
         }
         break;
 
       case 'unsubscribe':
-        if (message.boardId) {
-          this.unsubscribe(message.boardId, ws);
-          console.log(`[WebSocket] Client ${ws.clientId} unsubscribed from board: ${message.boardId}`);
+        if ((message as any).boardId) {
+          this.unsubscribe((message as any).boardId, ws);
+          console.log(`[WebSocket] Client ${ws.clientId} unsubscribed from board: ${(message as any).boardId}`);
         }
         break;
 
@@ -134,7 +136,7 @@ export class RealtimeServer {
         break;
 
       default:
-        console.warn(`[WebSocket] Unknown message type from ${ws.clientId}:`, message);
+        console.warn(`[WebSocket] Unknown message type from ${ws.clientId}:`, msgType);
     }
   }
 

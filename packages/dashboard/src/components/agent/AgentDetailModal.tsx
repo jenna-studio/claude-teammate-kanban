@@ -15,6 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAgentStore } from '@/stores/agentStore';
+import { useBoardStore } from '@/stores/boardStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useTaskStore } from '@/stores/taskStore';
 import { apiClient } from '@/services/api';
@@ -34,6 +35,7 @@ interface AgentStatistics {
 
 export const AgentDetailModal: React.FC = () => {
   const { getAgent } = useAgentStore();
+  const { currentBoardId } = useBoardStore();
   const { agentModalOpen, closeAgentModal, selectedAgentId } = useUIStore();
   const { selectTask } = useTaskStore();
   const { openTaskModal } = useUIStore();
@@ -50,7 +52,7 @@ export const AgentDetailModal: React.FC = () => {
     if (agentModalOpen && selectedAgentId) {
       setLoading(true);
       Promise.all([
-        apiClient.getAgentTasks(selectedAgentId),
+        apiClient.getAgentTasks(selectedAgentId, currentBoardId || undefined),
         apiClient.getAgentStatistics(selectedAgentId),
       ])
         .then(([tasks, stats]) => {
