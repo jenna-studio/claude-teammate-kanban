@@ -69,15 +69,15 @@ export class AgentKanbanMCPServer extends EventEmitter {
   }
 
   /**
-   * Remove all agents (and cascade-delete their tasks, sessions, comments,
-   * code changes) so each MCP connection starts from a blank slate.
+   * Mark all existing agents as offline and close stale sessions
+   * so the dashboard starts fresh without destroying historical task data.
    */
   private cleanStaleData() {
     try {
       const db = getDatabase();
-      db.exec('DELETE FROM agents');
-      db.exec('DELETE FROM activity_logs');
-      console.error('[MCP] Cleared stale agents and related data');
+      db.exec(`UPDATE agents SET status = 'offline'`);
+      db.exec(`UPDATE sessions SET is_active = 0 WHERE is_active = 1`);
+      console.error('[MCP] Marked stale agents offline and closed stale sessions');
     } catch (error) {
       console.error('[MCP] Warning: failed to clean stale data:', error);
     }

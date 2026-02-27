@@ -35,15 +35,18 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   const wipLimitReached = column.wipLimit && tasks.length >= column.wipLimit;
   const wipLimitWarning = column.wipLimit && tasks.length >= column.wipLimit * 0.8;
 
-  const columnColors: Record<string, { header: string; accent: string }> = {
-      todo: { header: "#FFCFDD", accent: "#FF4A96" },
-      claimed: { header: "#EDCFFF", accent: "#9B5FE0" },
-      in_progress: { header: "#C0F0FF", accent: "#00ADEF" },
-      review: { header: "#FFF8C5", accent: "#FFB800" },
-      done: { header: "#CBFDE0", accent: "#00BE4A" },
+  const isDark = document.documentElement.classList.contains('dark');
+
+  const columnColors: Record<string, { header: string; headerDark: string; accent: string }> = {
+      todo: { header: "#FFCFDD", headerDark: "#4A1A2A", accent: "#FF4A96" },
+      claimed: { header: "#EDCFFF", headerDark: "#2E1A4A", accent: "#9B5FE0" },
+      in_progress: { header: "#C0F0FF", headerDark: "#0E2A3D", accent: "#00ADEF" },
+      review: { header: "#FFF8C5", headerDark: "#3D3010", accent: "#FFB800" },
+      done: { header: "#CBFDE0", headerDark: "#0E3D1E", accent: "#00BE4A" },
   };
 
-  const palette = columnColors[column.id] || { header: '#9B6ED820', accent: '#9B6ED8' };
+  const colors = columnColors[column.id] || { header: '#9B6ED820', headerDark: '#2A1A3D', accent: '#9B6ED8' };
+  const palette = { header: isDark ? colors.headerDark : colors.header, accent: colors.accent };
 
   return (
     <div
@@ -55,7 +58,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       )}
       style={{
         boxShadow: `0 2px 12px ${palette.accent}18`,
-        backgroundColor: `${palette.header}30`,
+        backgroundColor: isDark ? `${palette.header}90` : `${palette.header}30`,
         border: `2px solid ${palette.accent}50`,
         '--column-accent': palette.accent,
       } as React.CSSProperties}
@@ -72,11 +75,11 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
         }}
       >
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-lg text-foreground dark:text-gray-900">{column.name}</h3>
+          <h3 className="font-semibold text-lg text-foreground">{column.name}</h3>
           <div className="flex items-center gap-2">
             <span
               className={cn(
-                'text-sm font-medium px-2 py-0.5 rounded-full dark:text-gray-900',
+                'text-sm font-medium px-2 py-0.5 rounded-full',
                 wipLimitReached && 'text-destructive font-semibold'
               )}
               style={{
