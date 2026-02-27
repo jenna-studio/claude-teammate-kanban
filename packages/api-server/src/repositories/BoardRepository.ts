@@ -3,7 +3,7 @@
  */
 
 import Database from 'better-sqlite3';
-import { Board, BoardColumn, BoardSettings, BoardResponse, BoardStatistics, AgentTask, Agent } from '@agent-track/shared';
+import { Board, BoardColumn, BoardSettings, BoardResponse, BoardStatistics, AgentTask, Agent, AgentStatus } from '@agent-track/shared';
 
 export class BoardRepository {
   constructor(private db: Database.Database) {}
@@ -403,22 +403,98 @@ export class BoardRepository {
   }
 
   /**
-   * Map database row to Agent object
+   * Map database row to Agent object with computed statistics and status
    */
   private mapRowToAgent(row: any): Agent {
+    const stats = this.computeAgentStats(row.id);
+    const status = this.computeAgentStatus(row.lastHeartbeat, stats.tasksInProgress, row.id);
+
     return {
       id: row.id,
       name: row.name,
       type: row.type,
-      status: row.status,
+      status,
       capabilities: this.parseJson(row.capabilities, []),
       maxConcurrentTasks: row.maxConcurrentTasks,
-      tasksCompleted: row.tasksCompleted,
-      tasksInProgress: row.tasksInProgress,
-      averageTaskDuration: row.averageTaskDuration,
-      successRate: row.successRate,
+      tasksCompleted: stats.tasksCompleted,
+      tasksInProgress: stats.tasksInProgress,
+      averageTaskDuration: stats.averageTaskDuration,
+      successRate: stats.successRate,
       lastHeartbeat: new Date(row.lastHeartbeat),
       metadata: this.parseJson(row.metadata),
+    };
+  }
+
+  /**
+   * Compute agent status based on heartbeat and task activity
+   */
+  private computeAgentStatus(lastHeartbeat: number, tasksInProgress: number, agentId?: string): AgentStatus {
+    const now = Date.now();
+    const heartbeatAge = now - lastHeartbeat;
+    const fiveMinutes = 5 * 60 * 1000;
+    const tenMinutes = 10 * 60 * 1000;
+
+    if (heartbeatAge <= fiveMinutes) {
+      return AgentStatus.ACTIVE;
+    }
+    if (heartbeatAge <= tenMinutes) {
+      return AgentStatus.IDLE;
+    }
+
+    if (agentId) {
+      const recentTask = this.db.prepare(`
+        SELECT MAX(updated_at) as lastUpdate
+        FROM agent_tasks
+        WHERE agent_id = ? AND status IN ('claimed', 'in_progress', 'review')
+      `).get(agentId) as any;
+
+      if (recentTask?.lastUpdate) {
+        const taskAge = now - recentTask.lastUpdate;
+        if (taskAge <= fiveMinutes) return AgentStatus.ACTIVE;
+        if (taskAge <= tenMinutes) return AgentStatus.IDLE;
+      }
+    }
+
+    if (tasksInProgress > 0) {
+      return AgentStatus.IDLE;
+    }
+
+    return AgentStatus.OFFLINE;
+  }
+
+  /**
+   * Compute agent statistics from tasks table
+   */
+  private computeAgentStats(agentId: string): {
+    tasksCompleted: number;
+    tasksInProgress: number;
+    averageTaskDuration: number;
+    successRate: number;
+  } {
+    const result = this.db.prepare(`
+      SELECT
+        SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as completedTasks,
+        SUM(CASE WHEN error_message IS NOT NULL AND status = 'done' THEN 1 ELSE 0 END) as failedTasks,
+        SUM(CASE WHEN status IN ('claimed', 'in_progress', 'review') THEN 1 ELSE 0 END) as inProgressTasks,
+        AVG(CASE WHEN actual_duration IS NOT NULL AND status = 'done' THEN actual_duration ELSE NULL END) as averageDuration
+      FROM agent_tasks
+      WHERE agent_id = ?
+    `).get(agentId) as any;
+
+    const completedTasks = result.completedTasks || 0;
+    const failedTasks = result.failedTasks || 0;
+    const inProgressTasks = result.inProgressTasks || 0;
+
+    let successRate = 100;
+    if (completedTasks > 0) {
+      successRate = Math.round(((completedTasks - failedTasks) / completedTasks) * 100);
+    }
+
+    return {
+      tasksCompleted: completedTasks,
+      tasksInProgress: inProgressTasks,
+      averageTaskDuration: Math.round(result.averageDuration || 0),
+      successRate,
     };
   }
 

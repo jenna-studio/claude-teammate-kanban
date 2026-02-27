@@ -72,12 +72,17 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
   },
 
   updateAgent: (updatedAgent) => {
-    set((state) => ({
-      agents: state.agents.map((agent) =>
-        agent.id === updatedAgent.id ? updatedAgent : agent
-      ),
-      error: null,
-    }));
+    set((state) => {
+      const exists = state.agents.some((agent) => agent.id === updatedAgent.id);
+      return {
+        agents: exists
+          ? state.agents.map((agent) =>
+              agent.id === updatedAgent.id ? updatedAgent : agent
+            )
+          : [...state.agents, updatedAgent],
+        error: null,
+      };
+    });
   },
 
   removeAgent: (agentId) => {

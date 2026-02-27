@@ -195,7 +195,11 @@ export class AgentKanbanMCPServer extends EventEmitter {
                 default: 'medium',
               },
               estimatedDuration: { type: 'number', description: 'Estimated duration in seconds' },
-              tags: { type: 'array', items: { type: 'string' } },
+              tags: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Task tags. Suggested values: frontend, backend, api, database, ui, testing, bug, feature, refactor, performance, security, documentation, devops, infrastructure, migration, config, styling, accessibility, i18n, analytics, auth, ci-cd, deployment, monitoring, cleanup, design, prototype, research, review, hotfix',
+              },
               parentTaskId: { type: 'string' },
             },
             required: ['boardId', 'sessionId', 'title'],
