@@ -112,31 +112,30 @@ export class RealtimeServer {
   private handleClientMessage(ws: ExtendedWebSocket, message: ClientMessage): void {
     ws.lastHeartbeat = Date.now();
 
-    const msgType = (message as any).type as string;
-
-    switch (msgType) {
+    switch (message.type) {
       case 'subscribe':
-        if ((message as any).boardId) {
-          this.subscribe((message as any).boardId, ws);
-          console.log(`[WebSocket] Client ${ws.clientId} subscribed to board: ${(message as any).boardId}`);
+        if (message.boardId) {
+          this.subscribe(message.boardId, ws);
+          console.log(`[WebSocket] Client ${ws.clientId} subscribed to board: ${message.boardId}`);
         }
         break;
 
       case 'unsubscribe':
-        if ((message as any).boardId) {
-          this.unsubscribe((message as any).boardId, ws);
-          console.log(`[WebSocket] Client ${ws.clientId} unsubscribed from board: ${(message as any).boardId}`);
+        if (message.boardId) {
+          this.unsubscribe(message.boardId, ws);
+          console.log(`[WebSocket] Client ${ws.clientId} unsubscribed from board: ${message.boardId}`);
         }
         break;
 
       case 'heartbeat':
+      // @ts-expect-error — dashboard also sends 'ping' which is not in the ClientMessage union
       case 'ping':
         // Respond to heartbeat/ping with pong
         this.sendToClient(ws, { type: 'pong' } as any);
         break;
 
       default:
-        console.warn(`[WebSocket] Unknown message type from ${ws.clientId}:`, msgType);
+        console.warn(`[WebSocket] Unknown message type from ${ws.clientId}:`, message);
     }
   }
 
