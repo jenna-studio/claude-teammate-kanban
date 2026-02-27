@@ -247,25 +247,263 @@ await mcp.callTool('complete_task', {
 5. **Filter & search**: Find specific tasks by agent, priority, or status
 6. **Drag & drop**: Manually move tasks between columns if needed
 
-## Configuration
+## MCP Server Integration
 
-### Claude Desktop Integration
+The MCP server uses **stdio transport** and exposes 17+ tools for agent instrumentation. Below are setup instructions for every major AI coding tool.
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+> **Prerequisites**: Before connecting any client, make sure you've built the project:
+> ```bash
+> pnpm install && pnpm build
+> ```
+
+---
+
+### VS Code (GitHub Copilot / Copilot Chat)
+
+VS Code supports MCP servers natively through its Copilot integration.
+
+**Option A — Workspace config (recommended for teams)**
+
+Create `.vscode/mcp.json` in your project root:
 
 ```json
 {
-  "mcpServers": {
-    "agent-kanban": {
+  "servers": {
+    "agent-track": {
       "command": "node",
-      "args": ["/path/to/agent-track-dashboard/packages/mcp-server/dist/index.js"],
+      "args": ["${workspaceFolder}/packages/mcp-server/dist/index.js"],
       "env": {
-        "DATABASE_PATH": "~/.agent-kanban/kanban.db"
+        "DATABASE_PATH": "${workspaceFolder}/packages/api-server/data/kanban.db"
       }
     }
   }
 }
 ```
+
+**Option B — User-level config (available across all projects)**
+
+1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+2. Run **MCP: Open User Configuration**
+3. Add the server entry:
+
+```json
+{
+  "servers": {
+    "agent-track": {
+      "command": "node",
+      "args": ["/absolute/path/to/agent-track-dashboard/packages/mcp-server/dist/index.js"],
+      "env": {
+        "DATABASE_PATH": "/absolute/path/to/agent-track-dashboard/packages/api-server/data/kanban.db"
+      }
+    }
+  }
+}
+```
+
+**Verify**: Open Copilot Chat and look for the tools icon — you should see Agent Track tools listed.
+
+---
+
+### Claude Code (CLI)
+
+Claude Code reads MCP config from `.mcp.json` (project-level) or `~/.claude.json` (user-level).
+
+**Option A — Project config (`.mcp.json` in project root, already included)**
+
+The project ships with a pre-configured `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "agent-track": {
+      "command": "node",
+      "args": ["./packages/mcp-server/dist/index.js"],
+      "env": {
+        "DATABASE_PATH": "./packages/api-server/data/kanban.db"
+      }
+    }
+  }
+}
+```
+
+Just `cd` into the project directory and the MCP server is auto-detected.
+
+**Option B — CLI wizard**
+
+```bash
+claude mcp add agent-track \
+  --command node \
+  --args ./packages/mcp-server/dist/index.js \
+  --env DATABASE_PATH=./packages/api-server/data/kanban.db
+```
+
+**Option C — Claude Desktop app**
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "agent-track": {
+      "command": "node",
+      "args": ["/absolute/path/to/agent-track-dashboard/packages/mcp-server/dist/index.js"],
+      "env": {
+        "DATABASE_PATH": "/absolute/path/to/agent-track-dashboard/packages/api-server/data/kanban.db"
+      }
+    }
+  }
+}
+```
+
+**Verify**: Run `claude` in the project directory — the MCP tools (`create_board`, `register_agent`, etc.) will appear automatically.
+
+---
+
+### Gemini CLI
+
+Gemini CLI reads MCP config from `~/.gemini/settings.json` (global) or `.gemini/settings.json` (project-level).
+
+**Option A — Project config (recommended)**
+
+Create `.gemini/settings.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "agent-track": {
+      "command": "node",
+      "args": ["./packages/mcp-server/dist/index.js"],
+      "env": {
+        "DATABASE_PATH": "./packages/api-server/data/kanban.db"
+      }
+    }
+  }
+}
+```
+
+**Option B — Global config**
+
+Add to `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "agent-track": {
+      "command": "node",
+      "args": ["/absolute/path/to/agent-track-dashboard/packages/mcp-server/dist/index.js"],
+      "env": {
+        "DATABASE_PATH": "/absolute/path/to/agent-track-dashboard/packages/api-server/data/kanban.db"
+      }
+    }
+  }
+}
+```
+
+**Verify**: Run `gemini` in the project directory and type `/mcp` to see the available tools.
+
+---
+
+### OpenAI Codex CLI
+
+Codex uses TOML configuration stored in `~/.codex/config.toml` (global) or `.codex/config.toml` (project-level, trusted projects only).
+
+**Option A — CLI command**
+
+```bash
+codex mcp add agent-track \
+  --env DATABASE_PATH=/absolute/path/to/agent-track-dashboard/packages/api-server/data/kanban.db \
+  -- node /absolute/path/to/agent-track-dashboard/packages/mcp-server/dist/index.js
+```
+
+**Option B — Manual config**
+
+Add to `~/.codex/config.toml` or `.codex/config.toml`:
+
+```toml
+[mcp_servers.agent-track]
+command = "node"
+args = ["./packages/mcp-server/dist/index.js"]
+
+[mcp_servers.agent-track.env]
+DATABASE_PATH = "./packages/api-server/data/kanban.db"
+```
+
+> **Note**: Project-level `.codex/config.toml` only works in [trusted projects](https://developers.openai.com/codex/config-basic/). The CLI and VS Code extension share this configuration.
+
+**Verify**: Run `codex` and the Agent Track tools will be available in the session.
+
+---
+
+### Android Studio (Gemini)
+
+Android Studio supports MCP servers through the Gemini integration. Stdio transport is supported in Android Studio **2025.2+** (via JVM-based proxy).
+
+**Step 1** — Open **Android Studio > Settings > Tools > AI > MCP Servers**
+
+**Step 2** — Check **Enable MCP Servers**
+
+**Step 3** — Add the following configuration in the MCP config field:
+
+```json
+{
+  "mcpServers": {
+    "agent-track": {
+      "command": "node",
+      "args": ["/absolute/path/to/agent-track-dashboard/packages/mcp-server/dist/index.js"],
+      "env": {
+        "DATABASE_PATH": "/absolute/path/to/agent-track-dashboard/packages/api-server/data/kanban.db"
+      }
+    }
+  }
+}
+```
+
+**Step 4** — Click **OK** and wait for the connection success notification.
+
+**Verify**: Type `/mcp` in the Gemini chat panel to see the available Agent Track tools.
+
+> **Note**: If you're on an older Android Studio version that only supports HTTP transport, you'll need to expose the MCP server over HTTP instead of stdio. Stdio support is available from version 2025.2 onwards.
+
+---
+
+### Quick Reference Table
+
+| Client | Config File | Format | Transport |
+|---|---|---|---|
+| **VS Code** | `.vscode/mcp.json` | JSON | stdio |
+| **Claude Code** | `.mcp.json` | JSON | stdio |
+| **Claude Desktop** | `claude_desktop_config.json` | JSON | stdio |
+| **Gemini CLI** | `.gemini/settings.json` | JSON | stdio |
+| **Codex CLI** | `.codex/config.toml` | TOML | stdio |
+| **Android Studio** | Settings > Tools > AI > MCP Servers | JSON | stdio |
+
+---
+
+### MCP Tools Reference
+
+Once connected, the following tools are available to AI agents:
+
+| Category | Tool | Description |
+|---|---|---|
+| **Board** | `create_board` | Create a new kanban board |
+| | `list_boards` | List all boards |
+| | `get_board` | Get board details with tasks and agents |
+| **Agent** | `register_agent` | Register an agent with capabilities |
+| | `heartbeat` | Send heartbeat to indicate active status |
+| **Session** | `start_session` | Start a work session on a board |
+| | `end_session` | End a work session |
+| **Task** | `start_task` | Create and claim a new task |
+| | `update_task_status` | Move task between kanban columns |
+| | `update_task_progress` | Update progress, files, and code changes |
+| | `complete_task` | Mark task as completed |
+| | `fail_task` | Mark task as failed |
+| **Collaboration** | `add_comment` | Add comment for inter-agent communication |
+| | `set_task_blocker` | Mark task as blocked |
+| **Query** | `get_my_tasks` | Get tasks assigned to an agent |
+| | `get_available_tasks` | Get unclaimed tasks |
+| | `get_blocked_tasks` | Get blocked tasks |
+
+---
 
 ### Environment Variables
 
