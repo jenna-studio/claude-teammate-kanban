@@ -26,6 +26,8 @@ The **instrumentation layer** that AI agents use to report their activities. Exp
 
 **Key Features:**
 - 20+ MCP tools for comprehensive agent instrumentation
+- **Auto-launch**: Starts API server, dashboard, and opens browser on MCP connect
+- **Per-project boards**: Automatically creates a dedicated board for each project directory
 - Event-driven architecture for real-time updates
 - SQLite database for persistence
 - Session management with heartbeat tracking
@@ -150,19 +152,26 @@ pnpm build
 
 ### Quick Start
 
-**Terminal 1** - Start the API + WebSocket Server:
-```bash
-pnpm --filter @agent-track/api-server dev
-```
+The MCP server **automatically launches everything** when it connects:
 
-**Terminal 2** - Start the Dashboard:
+1. Starts the API + WebSocket server (port 3000 / 8080)
+2. Starts the dashboard dev server (port 5173)
+3. Creates a board for the current project (if one doesn't exist)
+4. Opens the dashboard in your browser at the correct board URL
+
+Just configure the MCP server in your AI tool (see [MCP Server Integration](#mcp-server-integration)) and start coding — the dashboard appears automatically.
+
+**Manual start** (if you prefer running servers yourself):
+
 ```bash
+# Terminal 1 - API + WebSocket Server
+pnpm --filter @agent-track/api-server dev
+
+# Terminal 2 - Dashboard
 pnpm --filter @agent-track/dashboard dev
 ```
 
-**Open your browser** to `http://localhost:5173`
-
-That's it! The dashboard is now running and ready to receive agent updates.
+Then open `http://localhost:5173`.
 
 ### Development
 
@@ -542,21 +551,20 @@ Task cards now display comprehensive code modification details:
 
 ### 🤖 Dynamic Agent Status
 
-Agent status is computed in real-time based on heartbeat activity:
+Agent status updates are broadcast in **real-time via WebSocket** whenever an agent:
+
+- **Registers** (`register_agent`) - appears immediately as active
+- **Starts a session** (`start_session`) - linked to the board
+- **Sends a heartbeat** (`heartbeat`) - stays active
+- **Ends a session** (`end_session`) - marked offline if no other active sessions
+
+Status thresholds based on heartbeat activity:
 
 - **🟢 Active** - Heartbeat received within last 5 minutes
-  - Shows green badge and indicator dot
-  - Indicates agent is connected and responsive
-
 - **🟡 Idle** - Heartbeat between 5-10 minutes ago
-  - Shows yellow/amber badge and indicator dot
-  - Agent is connected but may be inactive
+- **🟣 Offline** - No heartbeat for 10+ minutes or session ended
 
-- **🟣 Offline** - No heartbeat for 10+ minutes
-  - Shows purple/gray badge and indicator dot
-  - Agent is considered disconnected
-
-**Status transitions automatically** - no manual updates required!
+**Status transitions automatically** - no manual updates or page refresh required!
 
 ### 📈 Real-time Agent Statistics
 
@@ -792,6 +800,10 @@ MIT
 - [x] Live agent statistics
 - [x] Enhanced task cards with code changes
 - [x] Task detail modal with comprehensive info
+- [x] Auto-launch dashboard on MCP connect
+- [x] Per-project board creation
+- [x] Real-time agent status via WebSocket (register, session, heartbeat)
+- [x] Smart board routing (last-viewed / newest board)
 
 ## Support
 
