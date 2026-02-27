@@ -806,6 +806,20 @@ export class AgentKanbanMCPServer extends EventEmitter {
     }
   }
 
+  /**
+   * Auto-create a board for a project directory if none exists.
+   * Returns the new board ID.
+   */
+  createBoardForProject(projectPath: string): string {
+    const name = projectPath.split('/').filter(Boolean).pop() || 'Untitled Project';
+    const result = this.createBoard({
+      name,
+      description: `Auto-created board for ${name}`,
+      projectPath,
+    });
+    return result.boardId;
+  }
+
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
