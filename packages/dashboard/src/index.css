@@ -91,6 +91,29 @@
   scrollbar-width: thin;
 }
 
+/* Agent sidebar scrollbar */
+.agent-sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.agent-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.agent-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #9370db33;
+  border-radius: 999px;
+}
+
+.agent-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9370db55;
+}
+
+.agent-sidebar-scroll {
+  scrollbar-color: #9370db33 transparent;
+  scrollbar-width: thin;
+}
+
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;

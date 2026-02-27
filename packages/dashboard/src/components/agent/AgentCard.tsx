@@ -27,8 +27,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, className }) => {
 
   return (
     <Card
-      className={cn('shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 backdrop-blur-sm border-white/60 cursor-pointer', className)}
-      style={{ background: 'linear-gradient(135deg, #FF7BA520, #9B6ED820, #52C4E820)' }}
+      className={cn('shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 backdrop-blur-sm border-white/60 cursor-pointer', className)}
+      style={{ background: 'linear-gradient(135deg, #FF7BA528, #9B6ED828, #52C4E828)' }}
       onClick={() => openAgentModal(agent.id)}
       role="button"
       tabIndex={0}

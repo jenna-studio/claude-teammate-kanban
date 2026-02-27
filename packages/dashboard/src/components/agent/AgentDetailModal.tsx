@@ -41,6 +41,8 @@ export const AgentDetailModal: React.FC = () => {
   const [agentTasks, setAgentTasks] = useState<AgentTask[]>([]);
   const [statistics, setStatistics] = useState<AgentStatistics | null>(null);
   const [loading, setLoading] = useState(false);
+  const [copiedTaskId, setCopiedTaskId] = useState<string | null>(null);
+  const [showAllTasks, setShowAllTasks] = useState(false);
 
   const agent = selectedAgentId ? getAgent(selectedAgentId) : undefined;
 
@@ -84,7 +86,7 @@ export const AgentDetailModal: React.FC = () => {
   return (
     <Dialog open={agentModalOpen} onOpenChange={closeAgentModal}>
       <DialogContent
-        className="max-w-3xl max-h-[90vh] overflow-y-auto p-12"
+        className="max-w-4xl w-[calc(100vw-3rem)] max-h-[90vh] overflow-y-auto overflow-x-hidden p-12"
         overlayStyle={{ backgroundColor: `${overlayAccent}18`, backdropFilter: 'blur(8px)' }}
       >
         <DialogHeader>
@@ -119,7 +121,7 @@ export const AgentDetailModal: React.FC = () => {
           </div>
         )}
 
-        <div className="space-y-6 mt-6">
+        <div className="space-y-6 mt-6 min-w-0">
           {/* Agent Info */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -226,12 +228,12 @@ export const AgentDetailModal: React.FC = () => {
                 Recent Tasks ({agentTasks.length})
               </h4>
               <div className="space-y-2">
-                {agentTasks.slice(0, 10).map((task) => {
+                {(showAllTasks ? agentTasks : agentTasks.slice(0, 10)).map((task) => {
                   const taskStatusColors = getStatusColor(task.status);
                   return (
                     <div
                       key={task.id}
-                      className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors cursor-pointer"
+                      className="p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors cursor-pointer min-w-0"
                       onClick={() => handleTaskClick(task)}
                       role="button"
                       tabIndex={0}
@@ -239,41 +241,51 @@ export const AgentDetailModal: React.FC = () => {
                         if (e.key === 'Enter') handleTaskClick(task);
                       }}
                     >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{task.title}</p>
-                        {task.currentAction && (
-                          <p className="text-xs text-muted-foreground italic truncate mt-0.5">
-                            {task.currentAction}
-                          </p>
-                        )}
-                      </div>
-                      <span
-                        className="text-[10px] font-mono text-muted-foreground/60 flex-shrink-0 cursor-pointer hover:text-muted-foreground transition-colors"
-                        title={`Click to copy: ${task.id}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigator.clipboard.writeText(task.id);
-                        }}
-                      >
-                        #{task.id.replace(/-/g, '').slice(-8)}
-                      </span>
-                      <Badge className={cn('text-xs flex-shrink-0', taskStatusColors.bg, taskStatusColors.text)}>
-                        {task.status.replace('_', ' ')}
-                      </Badge>
-                      {task.progress !== undefined && (
-                        <div className="w-16 flex-shrink-0">
-                          <Progress value={task.progress} className="h-1" />
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium break-words">{task.title}</p>
+                          {task.currentAction && (
+                            <p className="text-xs text-muted-foreground italic break-words mt-0.5">
+                              {task.currentAction}
+                            </p>
+                          )}
                         </div>
-                      )}
-                      <span className="text-xs text-muted-foreground flex-shrink-0 whitespace-nowrap">
-                        {formatRelativeTime(task.updatedAt)}
-                      </span>
+                        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+                          <span
+                            className="text-[10px] font-mono text-muted-foreground/60 cursor-pointer hover:text-muted-foreground transition-colors"
+                            style={{ color: copiedTaskId === task.id ? '#ff69b4' : undefined }}
+                            title={`Click to copy: ${task.id}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(task.id);
+                              setCopiedTaskId(task.id);
+                              setTimeout(() => setCopiedTaskId(null), 1500);
+                            }}
+                          >
+                            {copiedTaskId === task.id ? 'Copied!' : `#${task.id.replace(/-/g, '').slice(-8)}`}
+                          </span>
+                          <Badge className={cn('text-xs', taskStatusColors.bg, taskStatusColors.text)}>
+                            {task.status.replace('_', ' ')}
+                          </Badge>
+                          {task.progress !== undefined && (
+                            <div className="w-16">
+                              <Progress value={task.progress} className="h-1" />
+                            </div>
+                          )}
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {formatRelativeTime(task.updatedAt)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
                 {agentTasks.length > 10 && (
-                  <p className="text-xs text-muted-foreground text-center py-1">
-                    +{agentTasks.length - 10} more tasks
+                  <p
+                    className="text-xs text-muted-foreground text-center py-1 cursor-pointer hover:text-foreground transition-colors"
+                    onClick={() => setShowAllTasks(!showAllTasks)}
+                  >
+                    {showAllTasks ? 'Show less' : `+${agentTasks.length - 10} more tasks`}
                   </p>
                 )}
               </div>

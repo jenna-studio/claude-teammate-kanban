@@ -127,17 +127,26 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       {/* Kanban Board */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className={cn('flex gap-4 h-full', sidebarOpen ? 'p-6 pr-10' : 'p-6')}>
+          <div className="flex gap-4 h-full p-6">
             {columns.map((column) => {
               const columnTasks = tasks.filter(
                 (task) => task.status === column.id
               );
 
+              // Sort Done column by newest first (most recent updatedAt)
+              const sortedTasks = column.id === 'done'
+                ? [...columnTasks].sort((a, b) => {
+                    const dateA = new Date(a.completedAt || a.updatedAt).getTime();
+                    const dateB = new Date(b.completedAt || b.updatedAt).getTime();
+                    return dateB - dateA; // Descending order (newest first)
+                  })
+                : columnTasks;
+
               return (
                 <KanbanColumn
                   key={column.id}
                   column={column}
-                  tasks={columnTasks}
+                  tasks={sortedTasks}
                   onTaskClick={handleTaskClick}
                 />
               );
@@ -150,6 +159,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 </p>
               </div>
             )}
+
+            {/* Right-edge spacer: ensures padding after the last column is preserved when horizontally scrolling */}
+            {columns.length > 0 && <div className="shrink-0 w-1" aria-hidden="true" />}
           </div>
 
           {/* Drag Overlay */}

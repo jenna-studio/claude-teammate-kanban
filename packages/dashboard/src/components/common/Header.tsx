@@ -6,6 +6,7 @@ import React from 'react';
 import { Menu, Settings, RefreshCw, Github, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlertDropdown } from '@/components/common/AlertDropdown';
+import { TagFilter } from '@/components/filters/TagFilter';
 import { useUIStore } from '@/stores/uiStore';
 import { useBoardStore } from '@/stores/boardStore';
 import { cn } from '@/utils/cn';
@@ -97,6 +98,9 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
             <span className="text-sm font-medium text-white/90">{project.name}</span>
           </div>
         )}
+        <div className="ml-2">
+          <TagFilter className="[&_button]:bg-white/20 [&_button]:text-white [&_button]:border-white/30 [&_button]:hover:bg-white/30 [&_button.border-primary]:bg-white/30 [&_button.border-primary]:border-white/50" />
+        </div>
         <Button
           variant="ghost"
           size="icon"

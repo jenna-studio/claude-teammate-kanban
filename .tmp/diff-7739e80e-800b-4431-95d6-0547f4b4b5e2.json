@@ -1,0 +1,30 @@
+{
+  "taskId": "7739e80e-800b-4431-95d6-0547f4b4b5e2",
+  "commitHash": "a2ceaa7db9912e6437baa56cc1aa7cbe2df4cebd",
+  "codeChanges": [
+    {
+      "filePath": "packages/api-server/src/repositories/TaskRepository.ts",
+      "changeType": "modified",
+      "diff": "diff --git a/packages/api-server/src/repositories/TaskRepository.ts b/packages/api-server/src/repositories/TaskRepository.ts\nindex 7a37044..53a9b24 100644\n--- a/packages/api-server/src/repositories/TaskRepository.ts\n+++ b/packages/api-server/src/repositories/TaskRepository.ts\n@@ -109,7 +109,8 @@ export class TaskRepository {\n         blocked_by as blockedBy,\n         tags,\n         error_message as errorMessage,\n-        retry_count as retryCount\n+        retry_count as retryCount,\n+        commit_hash as commitHash\n       FROM agent_tasks\n       WHERE 1=1\n     `;\n@@ -141,7 +142,18 @@ export class TaskRepository {\n     const stmt = this.db.prepare(query);\n     const rows = stmt.all(...params) as any[];\n \n-    return rows.map(row => this.mapRowToTask(row));\n+    return rows.map(row => {\n+      const task = this.mapRowToTask(row);\n+      task.codeChanges = this.getCodeChanges(task.id);\n+      if (task.codeChanges && task.codeChanges.length > 0) {\n+        task.diffSummary = {\n+          filesChanged: task.codeChanges.length,\n+          insertions: task.codeChanges.reduce((sum, c) => sum + (c.linesAdded || 0), 0),\n+          deletions: task.codeChanges.reduce((sum, c) => sum + (c.linesDeleted || 0), 0),\n+        };\n+      }\n+      return task;\n+    });\n   }\n \n   /**\n",
+      "language": "typescript",
+      "linesAdded": 14,
+      "linesDeleted": 2
+    },
+    {
+      "filePath": "packages/mcp-server/src/utils/validation.ts",
+      "changeType": "modified",
+      "diff": "diff --git a/packages/mcp-server/src/utils/validation.ts b/packages/mcp-server/src/utils/validation.ts\nindex 6aa2a2e..47973a4 100644\n--- a/packages/mcp-server/src/utils/validation.ts\n+++ b/packages/mcp-server/src/utils/validation.ts\n@@ -17,15 +17,14 @@ export function validateNonEmptyString(value: string | null | undefined, fieldNa\n }\n \n /**\n- * Validates that a value is a valid UUID\n+ * Validates that a value is a valid identifier (non-empty string)\n  * @param value - The value to validate\n  * @param fieldName - The name of the field being validated\n- * @throws {ValidationError} If the value is not a valid UUID\n+ * @throws {ValidationError} If the value is empty\n  */\n export function validateUUID(value: string | null | undefined, fieldName: string): void {\n-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\n-  if (!value || !uuidRegex.test(value)) {\n-    throw new ValidationError(`${fieldName} must be a valid UUID`, fieldName);\n+  if (!value || value.trim().length === 0) {\n+    throw new ValidationError(`${fieldName} must be a non-empty string`, fieldName);\n   }\n }\n \n",
+      "language": "typescript",
+      "linesAdded": 4,
+      "linesDeleted": 5
+    }
+  ],
+  "linesChanged": {
+    "added": 18,
+    "removed": 7
+  },
+  "files": [
+    "packages/api-server/src/repositories/TaskRepository.ts",
+    "packages/mcp-server/src/utils/validation.ts"
+  ]
+}

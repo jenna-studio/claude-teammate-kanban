@@ -36,11 +36,11 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   const wipLimitWarning = column.wipLimit && tasks.length >= column.wipLimit * 0.8;
 
   const columnColors: Record<string, { header: string; accent: string }> = {
-      todo: { header: "#F7D1DE", accent: "#FF599E" },
-      claimed: { header: "#EFD9FD", accent: "#9B6ED8" },
-      in_progress: { header: "#CDF4FE", accent: "#00B9E9" },
-      review: { header: "#FFFBD0", accent: "#F7BD00" },
-      done: { header: "#D3FDE4", accent: "#00C148" },
+      todo: { header: "#FFCFDD", accent: "#FF4A96" },
+      claimed: { header: "#EDCFFF", accent: "#9B5FE0" },
+      in_progress: { header: "#C0F0FF", accent: "#00ADEF" },
+      review: { header: "#FFF8C5", accent: "#FFB800" },
+      done: { header: "#CBFDE0", accent: "#00BE4A" },
   };
 
   const palette = columnColors[column.id] || { header: '#9B6ED820', accent: '#9B6ED8' };

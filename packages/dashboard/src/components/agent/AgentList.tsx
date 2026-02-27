@@ -26,7 +26,10 @@ export const AgentList: React.FC<AgentListProps> = ({
     fetchAgents();
   }, [fetchAgents]);
 
-  const displayAgents = showOnlyActive ? activeAgents : agents;
+  const statusOrder: Record<string, number> = { active: 0, idle: 1, offline: 2 };
+  const displayAgents = (showOnlyActive ? activeAgents : agents)
+    .slice()
+    .sort((a, b) => (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3));
 
   if (loading) {
     return (

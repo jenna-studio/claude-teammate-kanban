@@ -89,9 +89,11 @@ export const TaskDetailModal: React.FC = () => {
           {task.description && (
             <div>
               <h4 className="font-semibold mb-2">Description</h4>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {task.description}
-              </p>
+              <div className="max-h-[200px] overflow-y-auto">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {task.description}
+                </p>
+              </div>
             </div>
           )}
 
@@ -168,9 +170,9 @@ export const TaskDetailModal: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <FileCode className="w-4 h-4 text-muted-foreground" />
-                <h4 className="font-semibold">Files Modified</h4>
+                <h4 className="font-semibold">Files Modified ({task.files.length})</h4>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 max-h-[200px] overflow-y-auto">
                 {task.files.map((file) => (
                   <div
                     key={file}
@@ -232,16 +234,18 @@ export const TaskDetailModal: React.FC = () => {
 
           {/* Code Changes (Diff Viewer) */}
           {task.codeChanges && task.codeChanges.length > 0 && (
-            <div>
+            <div className="w-full overflow-hidden">
               <h4 className="font-semibold mb-3">Code Changes</h4>
-              <CodeDiffViewer codeChanges={task.codeChanges} />
+              <div className="w-full overflow-auto">
+                <CodeDiffViewer codeChanges={task.codeChanges} />
+              </div>
             </div>
           )}
 
           {/* Tags */}
-          {task.tags && task.tags.length > 0 && (
-            <div>
-              <h4 className="font-semibold mb-2">Tags</h4>
+          <div>
+            <h4 className="font-semibold mb-2">Tags</h4>
+            {task.tags && task.tags.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {task.tags.map((tag) => (
                   <Badge key={tag} variant="secondary">
@@ -249,8 +253,10 @@ export const TaskDetailModal: React.FC = () => {
                   </Badge>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-sm text-muted-foreground">No tags</p>
+            )}
+          </div>
 
           {/* Statistics */}
           <div className="grid grid-cols-3 gap-4 pt-4 border-t">
@@ -285,7 +291,7 @@ export const TaskDetailModal: React.FC = () => {
                 <MessageSquare className="w-4 h-4 text-muted-foreground" />
                 <h4 className="font-semibold">Comments ({taskComments.length})</h4>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
                 {taskComments.map((comment) => (
                   <div
                     key={comment.id}

@@ -39,7 +39,7 @@ const DiffBlock: React.FC<{ change: CodeChange }> = ({ change }) => {
     : [];
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white/60">
+    <div className="border rounded-lg bg-white/60" style={{ width: '100%', maxWidth: '100%' }}>
       {/* File Header */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -47,7 +47,7 @@ const DiffBlock: React.FC<{ change: CodeChange }> = ({ change }) => {
       >
         <ChevronIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
         <Icon className={cn('w-4 h-4 flex-shrink-0', config.color)} />
-        <span className="text-sm font-mono flex-1 truncate">{change.filePath}</span>
+        <span className="text-sm font-mono flex-1 truncate min-w-0">{change.filePath}</span>
         {change.oldPath && (
           <span className="text-xs text-muted-foreground">
             from {change.oldPath}
@@ -70,7 +70,7 @@ const DiffBlock: React.FC<{ change: CodeChange }> = ({ change }) => {
 
       {/* Clean File Content (for added/deleted files) */}
       {expanded && isFullFile && contentLines.length > 0 && (
-        <div className="border-t overflow-x-auto">
+        <div className="border-t" style={{ width: '100%', maxWidth: '100%' }}>
           <div
             className="px-3 py-2 text-xs font-medium"
             style={{
@@ -80,57 +80,62 @@ const DiffBlock: React.FC<{ change: CodeChange }> = ({ change }) => {
           >
             {change.changeType === 'added' ? 'File content' : 'Deleted content'}
           </div>
-          <pre className="text-xs leading-5">
-            {contentLines.map((line, i) => (
-              <div
-                key={i}
-                className={cn(
-                  'px-3 py-0',
-                  change.changeType === 'added' ? 'bg-emerald-50 text-emerald-800' : 'bg-pink-50 text-pink-800'
-                )}
-              >
-                <span className="text-muted-foreground/50 select-none inline-block w-8 text-right mr-3">
-                  {i + 1}
-                </span>
-                {line}
-              </div>
-            ))}
-          </pre>
+          <div className="max-h-[400px] overflow-y-auto overflow-x-auto" style={{ width: '100%', maxWidth: '100%' }}>
+            <pre className="text-xs leading-5" style={{ margin: 0 }}>
+              {contentLines.map((line, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    'px-3 py-0',
+                    change.changeType === 'added' ? 'bg-emerald-50 text-emerald-800' : 'bg-pink-50 text-pink-800'
+                  )}
+                  style={{ whiteSpace: 'pre' }}
+                >
+                  <span className="text-muted-foreground/50 select-none inline-block w-8 text-right mr-3">
+                    {i + 1}
+                  </span>
+                  {line}
+                </div>
+              ))}
+            </pre>
+          </div>
         </div>
       )}
 
       {/* Diff Content (for modified/renamed files) */}
       {expanded && !isFullFile && diffLines.length > 0 && (
-        <div className="border-t overflow-x-auto">
-          <pre className="text-xs leading-5">
-            {diffLines.map((line, i) => {
-              let lineClass = 'px-3 py-0';
-              let prefix = ' ';
+        <div className="border-t" style={{ width: '100%', maxWidth: '100%' }}>
+          <div className="max-h-[400px] overflow-y-auto overflow-x-auto" style={{ width: '100%', maxWidth: '100%' }}>
+            <pre className="text-xs leading-5" style={{ margin: 0 }}>
+              {diffLines.map((line, i) => {
+                let lineClass = 'px-3 py-0';
+                let prefix = ' ';
 
-              if (line.startsWith('+++') || line.startsWith('---')) {
-                lineClass = 'px-3 py-0 bg-gray-100 text-muted-foreground';
-                prefix = '';
-              } else if (line.startsWith('@@')) {
-                lineClass = 'px-3 py-0 bg-purple-50 text-purple-600';
-                prefix = '';
-              } else if (line.startsWith('+')) {
-                lineClass = 'px-3 py-0 bg-emerald-50 text-emerald-800';
-                prefix = '';
-              } else if (line.startsWith('-')) {
-                lineClass = 'px-3 py-0 bg-pink-50 text-pink-800';
-                prefix = '';
-              }
+                if (line.startsWith('+++') || line.startsWith('---')) {
+                  lineClass = 'px-3 py-0 bg-gray-100 text-muted-foreground';
+                  prefix = '';
+                } else if (line.startsWith('@@')) {
+                  lineClass = 'px-3 py-0 bg-purple-50 text-purple-600';
+                  prefix = '';
+                } else if (line.startsWith('+')) {
+                  lineClass = 'px-3 py-0 bg-emerald-50 text-emerald-800';
+                  prefix = '';
+                } else if (line.startsWith('-')) {
+                  lineClass = 'px-3 py-0 bg-pink-50 text-pink-800';
+                  prefix = '';
+                }
 
-              return (
-                <div key={i} className={lineClass}>
-                  <span className="text-muted-foreground/50 select-none inline-block w-8 text-right mr-3">
-                    {i + 1}
-                  </span>
-                  {prefix}{line}
-                </div>
-              );
-            })}
-          </pre>
+                return (
+                  <div key={i} className={lineClass} style={{ whiteSpace: 'pre' }}>
+                    <span className="text-muted-foreground/50 select-none inline-block w-8 text-right mr-3">
+                      {i + 1}
+                    </span>
+                    {prefix}{line}
+                  </div>
+                );
+              })}
+            </pre>
+          </div>
         </div>
       )}
 
@@ -153,7 +158,7 @@ export const CodeDiffViewer: React.FC<CodeDiffViewerProps> = ({ codeChanges }) =
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" style={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
       {codeChanges.map((change, index) => (
         <DiffBlock key={`${change.filePath}-${index}`} change={change} />
       ))}

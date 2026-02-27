@@ -6,7 +6,6 @@ import React, { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { Clock, AlertCircle, FileCode, FilePlus, FileEdit, FileX, FileType, GitCommit } from 'lucide-react';
 import { AgentIcon } from '@/components/icons/AgentIcon';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
 import type { AgentTask } from '@/types';
@@ -202,22 +201,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
           Updated {formatRelativeTime(task.updatedAt)}
         </span>
       </div>
-
-      {/* Tags */}
-      {task.tags && task.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2">
-          {task.tags.slice(0, 3).map((tag) => (
-            <Badge key={tag} variant="secondary" className="text-xs">
-              {tag}
-            </Badge>
-          ))}
-          {task.tags.length > 3 && (
-            <Badge variant="secondary" className="text-xs">
-              +{task.tags.length - 3}
-            </Badge>
-          )}
-        </div>
-      )}
 
       {/* Commit Hash + Diff Summary */}
       {(task.commitHash || task.diffSummary || task.linesChanged) && (

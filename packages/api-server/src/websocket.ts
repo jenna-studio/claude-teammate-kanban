@@ -41,12 +41,12 @@ export class RealtimeServer {
       this.config = {
         port: config,
         heartbeatInterval: 30000,
-        clientTimeout: 60000,
+        clientTimeout: 90000,
       };
     } else {
       this.config = {
         heartbeatInterval: 30000,
-        clientTimeout: 60000,
+        clientTimeout: 90000,
         ...config,
       };
     }

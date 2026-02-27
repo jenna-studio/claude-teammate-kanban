@@ -28,18 +28,20 @@ type StateChangeHandler = (state: ConnectionState) => void;
 export class WebSocketClient {
   private ws: WebSocket | null = null;
   private url: string;
-  private reconnectInterval: number = 3000;
+  private reconnectInterval: number = 2000;
   private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 10;
+  private maxReconnectAttempts: number = Infinity;
   private reconnectTimer: NodeJS.Timeout | null = null;
   private heartbeatTimer: NodeJS.Timeout | null = null;
-  private heartbeatInterval: number = 30000; // 30 seconds
+  private heartbeatInterval: number = 15000; // 15 seconds (well within 60s server timeout)
 
   private state: ConnectionState = ConnectionState.DISCONNECTED;
   private messageHandlers: Set<MessageHandler> = new Set();
   private stateChangeHandlers: Set<StateChangeHandler> = new Set();
 
   private subscribedBoards: Set<string> = new Set();
+  private intentionalDisconnect: boolean = false;
+  private visibilityHandler: (() => void) | null = null;
 
   /**
    * Initialize WebSocket client
@@ -47,7 +49,17 @@ export class WebSocketClient {
    */
   constructor(url?: string) {
     this.url = url || WebSocketClient.getStoredWsUrl();
-    this.maxReconnectAttempts = WebSocketClient.getStoredMaxAttempts();
+
+    // Reconnect when tab becomes visible again (browsers throttle background timers)
+    this.visibilityHandler = () => {
+      if (document.visibilityState === 'visible' && this.state !== ConnectionState.CONNECTED && !this.intentionalDisconnect) {
+        console.log('[WebSocket] Tab became visible, reconnecting...');
+        this.reconnectAttempts = 0;
+        this.clearTimers();
+        this.connect();
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
   private static getStoredWsUrl(): string {
@@ -61,16 +73,7 @@ export class WebSocketClient {
     return import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
   }
 
-  private static getStoredMaxAttempts(): number {
-    try {
-      const stored = localStorage.getItem('agent-track-settings');
-      if (stored) {
-        const settings = JSON.parse(stored);
-        if (typeof settings.maxReconnectAttempts === 'number') return settings.maxReconnectAttempts;
-      }
-    } catch { /* ignore */ }
-    return 10;
-  }
+
 
   /**
    * Connect to WebSocket server
@@ -81,6 +84,7 @@ export class WebSocketClient {
       return;
     }
 
+    this.intentionalDisconnect = false;
     this.setState(ConnectionState.CONNECTING);
 
     try {
@@ -97,6 +101,7 @@ export class WebSocketClient {
    * Disconnect from WebSocket server
    */
   disconnect(): void {
+    this.intentionalDisconnect = true;
     this.clearTimers();
 
     if (this.ws) {
@@ -200,14 +205,13 @@ export class WebSocketClient {
     };
 
     this.ws.onclose = (event) => {
-      console.log('WebSocket disconnected:', event.reason);
+      console.log('WebSocket disconnected:', event.reason || '(no reason)');
       this.clearTimers();
+      this.setState(ConnectionState.DISCONNECTED);
 
-      if (!event.wasClean) {
-        this.setState(ConnectionState.DISCONNECTED);
+      // Always reconnect unless the user explicitly called disconnect()
+      if (!this.intentionalDisconnect) {
         this.scheduleReconnect();
-      } else {
-        this.setState(ConnectionState.DISCONNECTED);
       }
     };
 
@@ -221,23 +225,18 @@ export class WebSocketClient {
    * Schedule reconnection attempt
    */
   private scheduleReconnect(): void {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnect attempts reached');
-      this.setState(ConnectionState.ERROR);
-      return;
-    }
+    if (this.intentionalDisconnect) return;
 
     this.reconnectAttempts++;
     this.setState(ConnectionState.RECONNECTING);
 
+    // Exponential backoff: 2s, 3s, 4.5s, ... capped at 15s
     const delay = Math.min(
       this.reconnectInterval * Math.pow(1.5, this.reconnectAttempts - 1),
-      30000
+      15000
     );
 
-    console.log(
-      `Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
-    );
+    console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
 
     this.reconnectTimer = setTimeout(() => {
       this.connect();
