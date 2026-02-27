@@ -38,11 +38,11 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   const isDark = document.documentElement.classList.contains('dark');
 
   const columnColors: Record<string, { header: string; headerDark: string; accent: string }> = {
-      todo: { header: "#FFCFDD", headerDark: "#4A1A2A", accent: "#FF4A96" },
-      claimed: { header: "#EDCFFF", headerDark: "#2E1A4A", accent: "#9B5FE0" },
-      in_progress: { header: "#C0F0FF", headerDark: "#0E2A3D", accent: "#00ADEF" },
-      review: { header: "#FFF8C5", headerDark: "#3D3010", accent: "#FFB800" },
-      done: { header: "#CBFDE0", headerDark: "#0E3D1E", accent: "#00BE4A" },
+      todo: { header: "#FFB3D1", headerDark: "#4A1A2A", accent: "#FF4A96" },
+      claimed: { header: "#E1B3FF", headerDark: "#2E1A4A", accent: "#9B5FE0" },
+      in_progress: { header: "#99E5FF", headerDark: "#0E2A3D", accent: "#00ADEF" },
+      review: { header: "#FFF099", headerDark: "#3D3010", accent: "#FFB800" },
+      done: { header: "#9FF7C8", headerDark: "#0E3D1E", accent: "#00BE4A" },
   };
 
   const colors = columnColors[column.id] || { header: '#9B6ED820', headerDark: '#2A1A3D', accent: '#9B6ED8' };
@@ -58,7 +58,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       )}
       style={{
         boxShadow: `0 2px 12px ${palette.accent}18`,
-        backgroundColor: isDark ? `${palette.header}90` : `${palette.header}30`,
+        backgroundColor: isDark ? `${palette.header}90` : `${palette.header}60`,
         border: `2px solid ${palette.accent}50`,
         '--column-accent': palette.accent,
       } as React.CSSProperties}
