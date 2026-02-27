@@ -28,12 +28,14 @@ type StateChangeHandler = (state: ConnectionState) => void;
 export class WebSocketClient {
   private ws: WebSocket | null = null;
   private url: string;
-  private reconnectInterval: number = 2000;
+  private reconnectInterval: number = 1000;
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = Infinity;
   private reconnectTimer: NodeJS.Timeout | null = null;
   private heartbeatTimer: NodeJS.Timeout | null = null;
-  private heartbeatInterval: number = 15000; // 15 seconds (well within 60s server timeout)
+  private heartbeatInterval: number = 10000; // 10 seconds - more frequent to maintain connection
+  private missedPongCount: number = 0;
+  private maxMissedPongs: number = 3;
 
   private state: ConnectionState = ConnectionState.DISCONNECTED;
   private messageHandlers: Set<MessageHandler> = new Set();
@@ -42,6 +44,8 @@ export class WebSocketClient {
   private subscribedBoards: Set<string> = new Set();
   private intentionalDisconnect: boolean = false;
   private visibilityHandler: (() => void) | null = null;
+  private onlineHandler: (() => void) | null = null;
+  private offlineHandler: (() => void) | null = null;
 
   /**
    * Initialize WebSocket client
@@ -60,6 +64,24 @@ export class WebSocketClient {
       }
     };
     document.addEventListener('visibilitychange', this.visibilityHandler);
+
+    // Reconnect when network comes back online
+    this.onlineHandler = () => {
+      if (this.state !== ConnectionState.CONNECTED && !this.intentionalDisconnect) {
+        console.log('[WebSocket] Network online, reconnecting...');
+        this.reconnectAttempts = 0;
+        this.clearTimers();
+        this.connect();
+      }
+    };
+    window.addEventListener('online', this.onlineHandler);
+
+    // Mark as disconnected when network goes offline
+    this.offlineHandler = () => {
+      console.log('[WebSocket] Network offline');
+      this.setState(ConnectionState.DISCONNECTED);
+    };
+    window.addEventListener('offline', this.offlineHandler);
   }
 
   private static getStoredWsUrl(): string {
@@ -107,6 +129,17 @@ export class WebSocketClient {
     if (this.ws) {
       this.ws.close();
       this.ws = null;
+    }
+
+    // Remove event listeners
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+    }
+    if (this.onlineHandler) {
+      window.removeEventListener('online', this.onlineHandler);
+    }
+    if (this.offlineHandler) {
+      window.removeEventListener('offline', this.offlineHandler);
     }
 
     this.setState(ConnectionState.DISCONNECTED);
@@ -198,6 +231,13 @@ export class WebSocketClient {
     this.ws.onmessage = (event) => {
       try {
         const message: ServerMessage = JSON.parse(event.data);
+
+        // Reset missed pong count on any message (including pong responses)
+        if (message.type === 'pong') {
+          this.missedPongCount = 0;
+          return;
+        }
+
         this.notifyMessageHandlers(message);
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error);
@@ -218,6 +258,12 @@ export class WebSocketClient {
     this.ws.onerror = (error) => {
       console.error('WebSocket error:', error);
       this.setState(ConnectionState.ERROR);
+
+      // Don't wait for onclose - immediately attempt reconnection on error
+      if (!this.intentionalDisconnect) {
+        this.clearTimers();
+        this.scheduleReconnect();
+      }
     };
   }
 
@@ -230,10 +276,10 @@ export class WebSocketClient {
     this.reconnectAttempts++;
     this.setState(ConnectionState.RECONNECTING);
 
-    // Exponential backoff: 2s, 3s, 4.5s, ... capped at 15s
+    // Faster reconnection: 1s, 1.5s, 2.25s, ... capped at 5s (much faster than before)
     const delay = Math.min(
       this.reconnectInterval * Math.pow(1.5, this.reconnectAttempts - 1),
-      15000
+      5000
     );
 
     console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
@@ -247,8 +293,22 @@ export class WebSocketClient {
    * Start heartbeat to keep connection alive
    */
   private startHeartbeat(): void {
+    this.missedPongCount = 0;
+
     this.heartbeatTimer = setInterval(() => {
-      this.send({ type: 'heartbeat' });
+      // Check if we've missed too many pongs
+      if (this.missedPongCount >= this.maxMissedPongs) {
+        console.warn('[WebSocket] Connection appears dead (missed pongs), reconnecting...');
+        this.clearTimers();
+        if (this.ws) {
+          this.ws.close();
+        }
+        this.scheduleReconnect();
+        return;
+      }
+
+      this.missedPongCount++;
+      this.send({ type: 'ping' });
     }, this.heartbeatInterval);
   }
 

@@ -54,7 +54,7 @@ export const TaskDetailModal: React.FC = () => {
   return (
     <Dialog open={taskModalOpen} onOpenChange={closeTaskModal}>
       <DialogContent
-        className="max-w-4xl max-h-[90vh] overflow-y-auto p-12"
+        className="max-w-4xl max-h-[90vh] overflow-y-auto p-12 agent-sidebar-scroll"
         overlayStyle={{ backgroundColor: `${overlayAccent}18`, backdropFilter: 'blur(8px)' }}
       >
         <DialogHeader>
@@ -236,7 +236,7 @@ export const TaskDetailModal: React.FC = () => {
           {task.codeChanges && task.codeChanges.length > 0 && (
             <div className="w-full overflow-hidden">
               <h4 className="font-semibold mb-3">Code Changes</h4>
-              <div className="w-full overflow-auto">
+              <div className="w-full overflow-x-auto">
                 <CodeDiffViewer codeChanges={task.codeChanges} />
               </div>
             </div>
@@ -284,12 +284,12 @@ export const TaskDetailModal: React.FC = () => {
             )}
           </div>
 
-          {/* Comments */}
+          {/* AI Comments */}
           {taskComments && taskComments.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                <h4 className="font-semibold">Comments ({taskComments.length})</h4>
+                <h4 className="font-semibold">AI Comments ({taskComments.length})</h4>
               </div>
               <div className="space-y-3 max-h-[300px] overflow-y-auto">
                 {taskComments.map((comment) => (

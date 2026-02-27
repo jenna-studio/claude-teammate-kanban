@@ -41,12 +41,12 @@ export class RealtimeServer {
       this.config = {
         port: config,
         heartbeatInterval: 30000,
-        clientTimeout: 90000,
+        clientTimeout: 300000, // 5 minutes - much more lenient to prevent disconnections
       };
     } else {
       this.config = {
         heartbeatInterval: 30000,
-        clientTimeout: 90000,
+        clientTimeout: 300000, // 5 minutes - much more lenient to prevent disconnections
         ...config,
       };
     }
@@ -128,8 +128,9 @@ export class RealtimeServer {
         break;
 
       case 'heartbeat':
-        // Respond to heartbeat
-        this.sendToClient(ws, { type: 'task_created', task: {} as any });
+      case 'ping':
+        // Respond to heartbeat/ping with pong
+        this.sendToClient(ws, { type: 'pong' } as any);
         break;
 
       default:

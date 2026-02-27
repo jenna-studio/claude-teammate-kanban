@@ -80,8 +80,8 @@ const DiffBlock: React.FC<{ change: CodeChange }> = ({ change }) => {
           >
             {change.changeType === 'added' ? 'File content' : 'Deleted content'}
           </div>
-          <div className="max-h-[400px] overflow-y-auto overflow-x-auto" style={{ width: '100%', maxWidth: '100%' }}>
-            <pre className="text-xs leading-5" style={{ margin: 0 }}>
+          <div className="max-h-[400px] overflow-y-auto" style={{ width: '100%' }}>
+            <pre className="text-xs leading-5" style={{ margin: 0, width: 'max-content', minWidth: '100%' }}>
               {contentLines.map((line, i) => (
                 <div
                   key={i}
@@ -89,7 +89,7 @@ const DiffBlock: React.FC<{ change: CodeChange }> = ({ change }) => {
                     'px-3 py-0',
                     change.changeType === 'added' ? 'bg-emerald-50 text-emerald-800' : 'bg-pink-50 text-pink-800'
                   )}
-                  style={{ whiteSpace: 'pre' }}
+                  style={{ whiteSpace: 'nowrap' }}
                 >
                   <span className="text-muted-foreground/50 select-none inline-block w-8 text-right mr-3">
                     {i + 1}
@@ -105,8 +105,8 @@ const DiffBlock: React.FC<{ change: CodeChange }> = ({ change }) => {
       {/* Diff Content (for modified/renamed files) */}
       {expanded && !isFullFile && diffLines.length > 0 && (
         <div className="border-t" style={{ width: '100%', maxWidth: '100%' }}>
-          <div className="max-h-[400px] overflow-y-auto overflow-x-auto" style={{ width: '100%', maxWidth: '100%' }}>
-            <pre className="text-xs leading-5" style={{ margin: 0 }}>
+          <div className="max-h-[400px] overflow-y-auto" style={{ width: '100%' }}>
+            <pre className="text-xs leading-5" style={{ margin: 0, width: 'max-content', minWidth: '100%' }}>
               {diffLines.map((line, i) => {
                 let lineClass = 'px-3 py-0';
                 let prefix = ' ';
@@ -126,7 +126,7 @@ const DiffBlock: React.FC<{ change: CodeChange }> = ({ change }) => {
                 }
 
                 return (
-                  <div key={i} className={lineClass} style={{ whiteSpace: 'pre' }}>
+                  <div key={i} className={lineClass} style={{ whiteSpace: 'nowrap' }}>
                     <span className="text-muted-foreground/50 select-none inline-block w-8 text-right mr-3">
                       {i + 1}
                     </span>
@@ -158,7 +158,7 @@ export const CodeDiffViewer: React.FC<CodeDiffViewerProps> = ({ codeChanges }) =
   }
 
   return (
-    <div className="space-y-3" style={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+    <div className="space-y-3" style={{ width: '761px', maxWidth: '761px', overflow: 'hidden' }}>
       {codeChanges.map((change, index) => (
         <DiffBlock key={`${change.filePath}-${index}`} change={change} />
       ))}

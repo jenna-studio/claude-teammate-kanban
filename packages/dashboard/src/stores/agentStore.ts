@@ -47,6 +47,9 @@ interface AgentStore {
 
   /** Set error state */
   setError: (error: string | null) => void;
+
+  /** Clear all agents */
+  clearAgents: () => void;
 }
 
 /**
@@ -125,5 +128,9 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
 
   setError: (error) => {
     set({ error });
+  },
+
+  clearAgents: () => {
+    set({ agents: [], error: null });
   },
 }));

@@ -3,6 +3,8 @@
  */
 import { create } from 'zustand';
 import type { Board, BoardColumn, BoardStatistics } from '@/types';
+import { useTaskStore } from './taskStore';
+import { useAgentStore } from './agentStore';
 
 interface BoardStore {
   /** All boards */
@@ -94,6 +96,10 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   },
 
   setCurrentBoard: (boardId) => {
+    // Clear all tasks and agents when switching boards
+    useTaskStore.getState().clearTasks();
+    useAgentStore.getState().clearAgents();
+
     set({ currentBoardId: boardId });
   },
 
