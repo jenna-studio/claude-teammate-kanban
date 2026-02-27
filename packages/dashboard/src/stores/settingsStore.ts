@@ -10,11 +10,14 @@ interface ConnectionSettings {
   wsUrl: string;
   autoReconnect: boolean;
   maxReconnectAttempts: number;
+  theme: 'light' | 'dark' | 'system';
 }
 
 interface SettingsStore extends ConnectionSettings {
   updateSettings: (settings: Partial<ConnectionSettings>) => void;
   resetToDefaults: () => void;
+  toggleTheme: () => void;
+  isDarkMode: () => boolean;
 }
 
 const defaults: ConnectionSettings = {
@@ -22,6 +25,7 @@ const defaults: ConnectionSettings = {
   wsUrl: 'ws://localhost:8080',
   autoReconnect: true,
   maxReconnectAttempts: 10,
+  theme: 'system',
 };
 
 function loadSettings(): ConnectionSettings {
@@ -40,20 +44,60 @@ function saveSettings(settings: ConnectionSettings): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
+function getSystemTheme(): 'light' | 'dark' {
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  return 'light';
+}
+
 export const useSettingsStore = create<SettingsStore>((set, get) => ({
   ...loadSettings(),
 
   updateSettings: (partial) => {
     set(partial);
-    const { updateSettings: _, resetToDefaults: __, ...current } = get();
+    const { updateSettings: _, resetToDefaults: __, toggleTheme: ___, isDarkMode: ____, ...current } = get();
     saveSettings(current);
+
+    // Apply theme to document
+    if (partial.theme !== undefined) {
+      applyTheme(partial.theme);
+    }
   },
 
   resetToDefaults: () => {
     set(defaults);
     saveSettings(defaults);
+    applyTheme(defaults.theme);
+  },
+
+  toggleTheme: () => {
+    const current = get().theme;
+    const newTheme = current === 'dark' ? 'light' : 'dark';
+    set({ theme: newTheme });
+    const { updateSettings: _, resetToDefaults: __, toggleTheme: ___, isDarkMode: ____, ...settings } = get();
+    saveSettings(settings);
+    applyTheme(newTheme);
+  },
+
+  isDarkMode: () => {
+    const theme = get().theme;
+    if (theme === 'system') {
+      return getSystemTheme() === 'dark';
+    }
+    return theme === 'dark';
   },
 }));
+
+function applyTheme(theme: 'light' | 'dark' | 'system'): void {
+  const isDark = theme === 'dark' || (theme === 'system' && getSystemTheme() === 'dark');
+
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+}
 
 /** Read settings directly from localStorage (for use outside React) */
 export function getStoredSettings(): ConnectionSettings {

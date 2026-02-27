@@ -37,11 +37,42 @@
 
     --radius: 0.75rem;
   }
+
+  .dark {
+    --background: 270 30% 10%;
+    --foreground: 300 20% 92%;
+
+    --card: 270 25% 14%;
+    --card-foreground: 300 20% 92%;
+
+    --popover: 270 25% 14%;
+    --popover-foreground: 300 20% 92%;
+
+    --primary: 336 100% 68%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 275 30% 20%;
+    --secondary-foreground: 275 50% 90%;
+
+    --muted: 270 20% 18%;
+    --muted-foreground: 270 15% 65%;
+
+    --accent: 270 35% 22%;
+    --accent-foreground: 270 55% 85%;
+
+    --destructive: 348 85% 62%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 270 20% 22%;
+    --input: 270 20% 22%;
+    --ring: 336 100% 68%;
+  }
 }
 
 @layer base {
   * {
     @apply border-border;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
   }
   body {
     @apply bg-background text-foreground;
@@ -66,6 +97,19 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(336 60% 70%);
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: hsl(270 20% 16%);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(270 20% 30%);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(336 60% 50%);
 }
 
 /* Column-specific scrollbar — subtle, matches header accent */
@@ -137,4 +181,31 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Code diff scrollbar */
+.diff-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.diff-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.diff-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(270 15% 65% / 0.4);
+  border-radius: 999px;
+}
+
+.diff-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(270 15% 65% / 0.6);
+}
+
+.dark .diff-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(270 15% 65% / 0.3);
+}
+
+.dark .diff-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(270 15% 65% / 0.5);
 }

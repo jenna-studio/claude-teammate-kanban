@@ -3,12 +3,13 @@
  * Top navigation and controls
  */
 import React from 'react';
-import { Menu, Settings, RefreshCw, Github, FolderOpen } from 'lucide-react';
+import { Menu, Settings, RefreshCw, Github, FolderOpen, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlertDropdown } from '@/components/common/AlertDropdown';
 import { TagFilter } from '@/components/filters/TagFilter';
 import { useUIStore } from '@/stores/uiStore';
 import { useBoardStore } from '@/stores/boardStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 import { cn } from '@/utils/cn';
 
 /**
@@ -52,8 +53,10 @@ export interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ className }) => {
   const { toggleSidebar, openSettingsModal } = useUIStore();
   const { getCurrentBoard } = useBoardStore();
+  const { toggleTheme, isDarkMode } = useSettingsStore();
   const currentBoard = getCurrentBoard();
   const project = getProjectName(currentBoard);
+  const darkMode = isDarkMode();
 
   return (
     <header
@@ -111,6 +114,15 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
           <RefreshCw className="h-5 w-5" />
         </Button>
         <AlertDropdown />
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Toggle theme"
+          className="text-white/90 hover:text-white hover:bg-white/20"
+          onClick={toggleTheme}
+        >
+          {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </Button>
         <Button variant="ghost" size="icon" aria-label="Settings" className="text-white/90 hover:text-white hover:bg-white/20" onClick={openSettingsModal}>
           <Settings className="h-5 w-5" />
         </Button>

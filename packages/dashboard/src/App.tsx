@@ -8,6 +8,7 @@ import { BoardView } from '@/routes/BoardView';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useBoard } from '@/hooks/useBoard';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 /**
  * Main application component
@@ -15,6 +16,31 @@ import { useBoard } from '@/hooks/useBoard';
 const App: React.FC = () => {
   const { boards, fetchBoards } = useBoard(null);
   const [initialLoading, setInitialLoading] = useState(true);
+  const { theme } = useSettingsStore();
+
+  // Initialize theme on app load
+  useEffect(() => {
+    const applyTheme = () => {
+      const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+
+    applyTheme();
+
+    // Listen for system theme changes
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => applyTheme();
+
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, [theme]);
 
   useEffect(() => {
     fetchBoards().finally(() => setInitialLoading(false));

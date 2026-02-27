@@ -60,7 +60,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       className={cn(
         'cursor-grab active:cursor-grabbing p-5 transition-all shadow-md',
         'hover:shadow-lg hover:-translate-y-0.5',
-        'bg-white/80 backdrop-blur-sm border-white/60',
+        'bg-white/80 dark:bg-card backdrop-blur-sm border-white/60 dark:border-border',
         isDragging && 'opacity-50 shadow-xl',
         'select-none'
       )}
@@ -90,7 +90,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
       </div>
 
       {/* Title */}
-      <h4 className="font-medium text-sm line-clamp-2 mb-2">
+      <h4 className="font-medium text-sm line-clamp-2 mb-2 text-foreground">
         {task.title}
       </h4>
 

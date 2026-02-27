@@ -72,11 +72,11 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
         }}
       >
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-lg">{column.name}</h3>
+          <h3 className="font-semibold text-lg text-foreground dark:text-gray-900">{column.name}</h3>
           <div className="flex items-center gap-2">
             <span
               className={cn(
-                'text-sm font-medium px-2 py-0.5 rounded-full',
+                'text-sm font-medium px-2 py-0.5 rounded-full dark:text-gray-900',
                 wipLimitReached && 'text-destructive font-semibold'
               )}
               style={{
