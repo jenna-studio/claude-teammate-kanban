@@ -22,9 +22,18 @@ const dbPath = process.env.DATABASE_PATH || defaultDbPath;
 const server = new AgentKanbanMCPServer(dbPath);
 
 server.run().then(() => {
-  // Once the MCP server is connected, launch the API server,
-  // dashboard dev server, and open the browser automatically.
-  launchDashboard();
+  // Find the board for the current working directory so the browser
+  // opens directly to the correct project board.
+  const cwd = process.cwd();
+  const boardId = server.findBoardByProjectPath(cwd);
+  if (boardId) {
+    console.error(`[MCP] Found board ${boardId} for project ${cwd}`);
+  } else {
+    console.error(`[MCP] No board found for project ${cwd} — dashboard will show default`);
+  }
+
+  // Launch the API server, dashboard dev server, and open the browser.
+  launchDashboard(boardId);
 }).catch((error) => {
   console.error('Fatal error:', error);
   process.exit(1);

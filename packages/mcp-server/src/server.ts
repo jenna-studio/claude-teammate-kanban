@@ -791,6 +791,21 @@ export class AgentKanbanMCPServer extends EventEmitter {
     return { tasks };
   }
 
+  /**
+   * Find the most recent board for a given project path.
+   */
+  findBoardByProjectPath(projectPath: string): string | undefined {
+    try {
+      const db = getDatabase();
+      const row = db.prepare(
+        `SELECT id FROM boards WHERE project_path = ? ORDER BY created_at DESC LIMIT 1`
+      ).get(projectPath) as { id: string } | undefined;
+      return row?.id;
+    } catch {
+      return undefined;
+    }
+  }
+
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);

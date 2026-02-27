@@ -103,8 +103,9 @@ function openBrowser(url: string): void {
 
 /**
  * Main entry point – start servers if needed, then open the dashboard.
+ * @param boardId Optional board ID to open directly in the dashboard
  */
-export async function launchDashboard(): Promise<void> {
+export async function launchDashboard(boardId?: string): Promise<void> {
   try {
     // --- API server ---
     const apiUp = await isPortListening(API_PORT);
@@ -157,8 +158,9 @@ export async function launchDashboard(): Promise<void> {
     }
 
     // --- Open browser ---
-    console.error(`[Launcher] Opening ${DASHBOARD_URL}`);
-    openBrowser(DASHBOARD_URL);
+    const url = boardId ? `${DASHBOARD_URL}/board/${boardId}` : DASHBOARD_URL;
+    console.error(`[Launcher] Opening ${url}`);
+    openBrowser(url);
   } catch (error) {
     // Never let launcher errors crash the MCP server
     console.error('[Launcher] Error:', error);

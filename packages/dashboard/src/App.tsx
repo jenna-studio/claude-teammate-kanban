@@ -3,7 +3,7 @@
  * Root application component with routing and error boundary
  */
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { BoardView } from '@/routes/BoardView';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
@@ -74,10 +74,9 @@ const App: React.FC = () => {
  * Wrapper component to extract boardId from route params
  */
 const BoardViewWrapper: React.FC = () => {
-  const pathSegments = window.location.pathname.split('/');
-  const boardId = pathSegments[pathSegments.length - 1] || 'main-board';
+  const { boardId } = useParams<{ boardId: string }>();
 
-  return <BoardView boardId={boardId} />;
+  return <BoardView boardId={boardId || 'main-board'} />;
 };
 
 /**
