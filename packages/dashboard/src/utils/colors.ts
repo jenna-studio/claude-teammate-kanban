@@ -91,18 +91,18 @@ export function getAgentStatusColor(status: AgentStatus): {
 } {
   const colors = {
     active: {
-      bg: 'bg-emerald-100',
-      text: 'text-emerald-700',
+      bg: 'bg-emerald-100 dark:bg-emerald-900/30',
+      text: 'text-emerald-700 dark:text-emerald-400',
       dot: 'bg-[#5DD9A0]',
     },
     idle: {
-      bg: 'bg-amber-100',
-      text: 'text-amber-700',
+      bg: 'bg-amber-100 dark:bg-amber-900/30',
+      text: 'text-amber-700 dark:text-amber-400',
       dot: 'bg-[#FFD966]',
     },
     offline: {
-      bg: 'bg-purple-100',
-      text: 'text-purple-600',
+      bg: 'bg-purple-100 dark:bg-purple-900/30',
+      text: 'text-purple-600 dark:text-purple-400',
       dot: 'bg-purple-400',
     },
   };

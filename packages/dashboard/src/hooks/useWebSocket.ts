@@ -2,7 +2,7 @@
  * useWebSocket Hook
  * Manages WebSocket connection and message handling
  */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { wsClient, ConnectionState } from '@/services/websocket';
 import { useTaskStore } from '@/stores/taskStore';
 import { useAgentStore } from '@/stores/agentStore';
@@ -53,7 +53,7 @@ function playCompletionSound(): void {
  */
 export function useWebSocket(boardId: string | null) {
   const [connectionState, setConnectionState] = useState<ConnectionState>(
-    ConnectionState.DISCONNECTED
+    () => wsClient.getState()
   );
 
   const { addTask, updateTask, removeTask } = useTaskStore();
@@ -61,52 +61,20 @@ export function useWebSocket(boardId: string | null) {
   const { addBoard } = useBoardStore();
   const { addAlert } = useAlertStore();
 
-  // Track if we're already subscribed to prevent duplicate subscriptions
-  const subscribedRef = useRef(false);
-
-  useEffect(() => {
-    // Connect to WebSocket server
-    wsClient.connect();
-
-    // Subscribe to state changes
-    const unsubscribeState = wsClient.onStateChange((state) => {
-      setConnectionState(state);
-    });
-
-    // Subscribe to messages
-    const unsubscribeMessages = wsClient.onMessage((message: ServerMessage) => {
-      handleMessage(message);
-    });
-
-    // Subscribe to board if provided
-    if (boardId && !subscribedRef.current) {
-      wsClient.subscribeToBoard(boardId);
-      subscribedRef.current = true;
-    }
-
-    return () => {
-      // Unsubscribe from board
-      if (boardId && subscribedRef.current) {
-        wsClient.unsubscribeFromBoard(boardId);
-        subscribedRef.current = false;
-      }
-
-      // Cleanup subscriptions
-      unsubscribeState();
-      unsubscribeMessages();
-
-      // Disconnect if no other components are using it
-      // wsClient.disconnect();
-    };
-  }, [boardId]);
+  // Use refs so message handler always sees latest store functions
+  // without causing effect re-runs
+  const handlersRef = useRef({ addTask, updateTask, removeTask, updateAgent, addBoard, addAlert });
+  handlersRef.current = { addTask, updateTask, removeTask, updateAgent, addBoard, addAlert };
 
   /**
-   * Handle incoming WebSocket messages
+   * Handle incoming WebSocket messages (stable via ref)
    */
-  function handleMessage(message: ServerMessage) {
+  const handleMessage = useCallback((message: ServerMessage) => {
+    const { addTask: _addTask, updateTask: _updateTask, removeTask: _removeTask, updateAgent: _updateAgent, addBoard: _addBoard, addAlert: _addAlert } = handlersRef.current;
+
     switch (message.type) {
       case 'task_created':
-        addTask(message.task);
+        _addTask(message.task);
         break;
 
       case 'task_updated': {
@@ -119,49 +87,89 @@ export function useWebSocket(boardId: string | null) {
           message.task.status === 'done'
         ) {
           playCompletionSound();
-          addAlert({
+          _addAlert({
             severity: 'success',
             source: 'system',
             title: 'Task Completed',
             message: `"${message.task.title}" completed by ${message.task.agentName || 'agent'}`,
           });
         }
-        updateTask(message.task);
+        _updateTask(message.task);
         break;
       }
 
       case 'task_moved':
-        // The task_updated message should handle this
         break;
 
       case 'task_deleted':
-        removeTask(message.taskId);
+        _removeTask(message.taskId);
         break;
 
       case 'agent_status_changed':
-        updateAgent(message.agent);
+        _updateAgent(message.agent);
         break;
 
       case 'activity_logged':
-        // Could be handled by a separate activity log store
         console.log('Activity logged:', message.log);
         break;
 
       case 'comment_added':
-        // Could be handled by a comment store or trigger a refetch
         console.log('Comment added:', message.comment);
         break;
 
       case 'board_created':
-        // Add the new board to the store and navigate to it
-        addBoard(message.board as Board);
+        _addBoard(message.board as Board);
         window.location.href = `/board/${(message.board as Board).id}`;
         break;
 
       default:
         console.warn('Unknown message type:', message);
     }
-  }
+  }, []);
+
+  // Effect 1: Connect once on mount
+  const connectedRef = useRef(false);
+  useEffect(() => {
+    if (connectedRef.current) return;
+    connectedRef.current = true;
+    wsClient.connect();
+  }, []);
+
+  // Effect 2: Subscribe to connection state changes (stable, no deps)
+  useEffect(() => {
+    const unsubscribe = wsClient.onStateChange((state) => {
+      setConnectionState(state);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Effect 3: Subscribe to messages (stable via useCallback)
+  useEffect(() => {
+    const unsubscribe = wsClient.onMessage(handleMessage);
+    return () => unsubscribe();
+  }, [handleMessage]);
+
+  // Effect 4: Subscribe to board (only re-runs when boardId changes)
+  const subscribedBoardRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!boardId) return;
+    if (subscribedBoardRef.current === boardId) return;
+
+    // Unsubscribe from previous board
+    if (subscribedBoardRef.current) {
+      wsClient.unsubscribeFromBoard(subscribedBoardRef.current);
+    }
+
+    wsClient.subscribeToBoard(boardId);
+    subscribedBoardRef.current = boardId;
+
+    return () => {
+      if (subscribedBoardRef.current) {
+        wsClient.unsubscribeFromBoard(subscribedBoardRef.current);
+        subscribedBoardRef.current = null;
+      }
+    };
+  }, [boardId]);
 
   return {
     connected: connectionState === ConnectionState.CONNECTED,
