@@ -2,7 +2,7 @@
  * BoardView Component
  * Main view containing the kanban board and agent sidebar
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 import { AgentList } from '@/components/agent/AgentList';
 import { TaskDetailModal } from '@/components/task/TaskDetailModal';
@@ -12,6 +12,7 @@ import { Header } from '@/components/common/Header';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useSystemAlerts } from '@/hooks/useSystemAlerts';
 import { useUIStore } from '@/stores/uiStore';
+import { useBoardStore } from '@/stores/boardStore';
 import { cn } from '@/utils/cn';
 
 export interface BoardViewProps {
@@ -28,8 +29,16 @@ export interface BoardViewProps {
  */
 export const BoardView: React.FC<BoardViewProps> = ({ boardId }) => {
   const { sidebarOpen } = useUIStore();
+  const { setCurrentBoard } = useBoardStore();
   const { connected, connectionState } = useWebSocket(boardId);
   useSystemAlerts();
+
+  // Sync boardId to the store so Header and other components can read it
+  useEffect(() => {
+    if (boardId) {
+      setCurrentBoard(boardId);
+    }
+  }, [boardId, setCurrentBoard]);
 
   return (
       <div className="h-screen flex flex-col bg-background">
