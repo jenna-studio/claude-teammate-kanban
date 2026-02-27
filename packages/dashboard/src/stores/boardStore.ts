@@ -96,10 +96,12 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   },
 
   setCurrentBoard: (boardId) => {
-    // Clear all tasks and agents when switching boards
-    useTaskStore.getState().clearTasks();
-    useAgentStore.getState().clearAgents();
-
+    const { currentBoardId } = get();
+    // Only clear tasks/agents when actually switching to a different board
+    if (currentBoardId !== boardId) {
+      useTaskStore.getState().clearTasks();
+      useAgentStore.getState().clearAgents();
+    }
     set({ currentBoardId: boardId });
   },
 
