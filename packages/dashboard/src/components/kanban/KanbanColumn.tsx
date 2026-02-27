@@ -7,6 +7,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { TaskCard } from './TaskCard';
 import type { BoardColumn, AgentTask } from '@/types';
 import { cn } from '@/utils/cn';
+import { columnToStatus } from '@/utils/colors';
 
 export interface KanbanColumnProps {
   column: BoardColumn;
@@ -27,8 +28,10 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   tasks,
   onTaskClick,
 }) => {
+  const statusKey = columnToStatus(column);
+
   const { setNodeRef, isOver } = useDroppable({
-    id: column.id,
+    id: statusKey,
     data: { type: 'column', column },
   });
 
@@ -45,7 +48,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       done: { header: "#9FF7C8", headerDark: "#0E3D1E", accent: "#00BE4A" },
   };
 
-  const colors = columnColors[column.id] || { header: '#9B6ED820', headerDark: '#2A1A3D', accent: '#9B6ED8' };
+  const colors = columnColors[statusKey] || { header: '#9B6ED820', headerDark: '#2A1A3D', accent: '#9B6ED8' };
   const palette = { header: isDark ? colors.headerDark : colors.header, accent: colors.accent };
 
   return (

@@ -1,7 +1,32 @@
 /**
  * Color utility functions for task priorities, agent status, etc.
  */
-import type { TaskImportance, TaskStatus, AgentStatus, AlertSeverity } from '@/types';
+import type { TaskImportance, TaskStatus, AgentStatus, AlertSeverity, BoardColumn } from '@/types';
+
+/**
+ * Map a board column to its corresponding task status key.
+ * Handles both legacy status-string IDs (e.g. 'todo') and UUID IDs
+ * by falling back to a normalised column name lookup.
+ */
+const STATUS_KEYS: TaskStatus[] = ['todo', 'claimed', 'in_progress', 'review', 'done'];
+
+const NAME_TO_STATUS: Record<string, TaskStatus> = {
+  'todo': 'todo',
+  'claimed': 'claimed',
+  'in progress': 'in_progress',
+  'in_progress': 'in_progress',
+  'review': 'review',
+  'done': 'done',
+};
+
+export function columnToStatus(column: BoardColumn): TaskStatus {
+  // If column.id is already a valid status key, use it directly
+  if ((STATUS_KEYS as string[]).includes(column.id)) {
+    return column.id as TaskStatus;
+  }
+  // Otherwise map from column name
+  return NAME_TO_STATUS[column.name.toLowerCase()] || column.id as TaskStatus;
+}
 
 /**
  * Get color classes for task importance — cotton candy palette

@@ -12,6 +12,7 @@ import { useTaskStore } from '@/stores/taskStore';
 import { useUIStore } from '@/stores/uiStore';
 import type { AgentTask, TaskStatus } from '@/types';
 import { cn } from '@/utils/cn';
+import { columnToStatus } from '@/utils/colors';
 
 export interface KanbanBoardProps {
   boardId: string;
@@ -129,12 +130,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="flex gap-4 h-full p-6">
             {columns.map((column) => {
+              const statusKey = columnToStatus(column);
               const columnTasks = tasks.filter(
-                (task) => task.status === column.id
+                (task) => task.status === statusKey
               );
 
               // Sort Done column by newest first (most recent updatedAt)
-              const sortedTasks = column.id === 'done'
+              const sortedTasks = statusKey === 'done'
                 ? [...columnTasks].sort((a, b) => {
                     const dateA = new Date(a.completedAt || a.updatedAt).getTime();
                     const dateB = new Date(b.completedAt || b.updatedAt).getTime();
