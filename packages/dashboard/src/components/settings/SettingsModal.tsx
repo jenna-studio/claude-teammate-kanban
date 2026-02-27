@@ -26,6 +26,7 @@ export const SettingsModal: React.FC = () => {
   const [wsUrl, setWsUrl] = useState(settings.wsUrl);
   const [autoReconnect, setAutoReconnect] = useState(settings.autoReconnect);
   const [maxAttempts, setMaxAttempts] = useState(settings.maxReconnectAttempts);
+  const [connectionTimeout, setConnectionTimeout] = useState(settings.connectionTimeout);
   const [testStatus, setTestStatus] = useState<TestStatus>('idle');
   const [testMessage, setTestMessage] = useState('');
 
@@ -36,16 +37,18 @@ export const SettingsModal: React.FC = () => {
       setWsUrl(settings.wsUrl);
       setAutoReconnect(settings.autoReconnect);
       setMaxAttempts(settings.maxReconnectAttempts);
+      setConnectionTimeout(settings.connectionTimeout);
       setTestStatus('idle');
       setTestMessage('');
     }
-  }, [settingsModalOpen, settings.apiUrl, settings.wsUrl, settings.autoReconnect, settings.maxReconnectAttempts]);
+  }, [settingsModalOpen, settings.apiUrl, settings.wsUrl, settings.autoReconnect, settings.maxReconnectAttempts, settings.connectionTimeout]);
 
   const hasChanges =
     apiUrl !== settings.apiUrl ||
     wsUrl !== settings.wsUrl ||
     autoReconnect !== settings.autoReconnect ||
-    maxAttempts !== settings.maxReconnectAttempts;
+    maxAttempts !== settings.maxReconnectAttempts ||
+    connectionTimeout !== settings.connectionTimeout;
 
   async function handleTestConnection() {
     setTestStatus('testing');
@@ -66,7 +69,7 @@ export const SettingsModal: React.FC = () => {
   }
 
   function handleSave() {
-    settings.updateSettings({ apiUrl, wsUrl, autoReconnect, maxReconnectAttempts: maxAttempts });
+    settings.updateSettings({ apiUrl, wsUrl, autoReconnect, maxReconnectAttempts: maxAttempts, connectionTimeout });
     closeSettingsModal();
     window.location.reload();
   }
@@ -77,6 +80,7 @@ export const SettingsModal: React.FC = () => {
     setWsUrl('ws://localhost:8080');
     setAutoReconnect(true);
     setMaxAttempts(10);
+    setConnectionTimeout(300);
     setTestStatus('idle');
     setTestMessage('');
   }
@@ -161,6 +165,26 @@ export const SettingsModal: React.FC = () => {
               />
             </div>
           )}
+
+          {/* Connection Timeout */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground" htmlFor="connection-timeout">
+              Connection timeout (seconds)
+            </label>
+            <input
+              id="connection-timeout"
+              type="number"
+              min={30}
+              max={3600}
+              value={connectionTimeout}
+              onChange={(e) => setConnectionTimeout(Math.max(30, Math.min(3600, parseInt(e.target.value) || 300)))}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              placeholder="300"
+            />
+            <p className="text-xs text-muted-foreground">
+              How long to wait before considering a connection lost (30-3600 seconds)
+            </p>
+          </div>
 
           {/* Test Connection */}
           <div className="space-y-2">

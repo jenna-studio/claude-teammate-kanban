@@ -10,6 +10,7 @@ interface ConnectionSettings {
   wsUrl: string;
   autoReconnect: boolean;
   maxReconnectAttempts: number;
+  connectionTimeout: number; // in seconds
   theme: 'light' | 'dark' | 'system';
 }
 
@@ -25,6 +26,7 @@ const defaults: ConnectionSettings = {
   wsUrl: 'ws://localhost:8080',
   autoReconnect: true,
   maxReconnectAttempts: 10,
+  connectionTimeout: 300, // 5 minutes in seconds
   theme: 'system',
 };
 

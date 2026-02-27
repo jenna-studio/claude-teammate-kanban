@@ -35,7 +35,7 @@ export class WebSocketClient {
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private heartbeatInterval: number = 10000; // 10 seconds - more frequent to maintain connection
   private missedPongCount: number = 0;
-  private maxMissedPongs: number = 3;
+  private maxMissedPongs: number = 3; // Calculated based on connectionTimeout setting
 
   private state: ConnectionState = ConnectionState.DISCONNECTED;
   private messageHandlers: Set<MessageHandler> = new Set();
@@ -53,6 +53,10 @@ export class WebSocketClient {
    */
   constructor(url?: string) {
     this.url = url || WebSocketClient.getStoredWsUrl();
+
+    // Set maxMissedPongs based on user's connection timeout setting
+    const timeoutSeconds = WebSocketClient.getStoredConnectionTimeout();
+    this.maxMissedPongs = Math.max(3, Math.floor(timeoutSeconds / (this.heartbeatInterval / 1000)));
 
     // Reconnect when tab becomes visible again (browsers throttle background timers)
     this.visibilityHandler = () => {
@@ -93,6 +97,17 @@ export class WebSocketClient {
       }
     } catch { /* ignore */ }
     return import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
+  }
+
+  private static getStoredConnectionTimeout(): number {
+    try {
+      const stored = localStorage.getItem('agent-track-settings');
+      if (stored) {
+        const settings = JSON.parse(stored);
+        if (settings.connectionTimeout) return settings.connectionTimeout;
+      }
+    } catch { /* ignore */ }
+    return 300; // Default: 5 minutes
   }
 
 
