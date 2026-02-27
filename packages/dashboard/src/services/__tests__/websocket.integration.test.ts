@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useTaskStore } from '@/stores/taskStore';
-import type { AgentTask, ServerMessage } from '@/types';
+import type { AgentTask } from '@/types';
 
 describe('WebSocket Task Movement Integration', () => {
   beforeEach(() => {

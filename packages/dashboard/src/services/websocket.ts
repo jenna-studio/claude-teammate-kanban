@@ -30,7 +30,6 @@ export class WebSocketClient {
   private url: string;
   private reconnectInterval: number = 1000;
   private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = Infinity;
   private reconnectTimer: NodeJS.Timeout | null = null;
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private heartbeatInterval: number = 10000; // 10 seconds - more frequent to maintain connection
@@ -245,15 +244,15 @@ export class WebSocketClient {
 
     this.ws.onmessage = (event) => {
       try {
-        const message: ServerMessage = JSON.parse(event.data);
+        const raw = JSON.parse(event.data) as { type: string };
 
-        // Reset missed pong count on any message (including pong responses)
-        if (message.type === 'pong') {
+        // Reset missed pong count on pong responses
+        if (raw.type === 'pong') {
           this.missedPongCount = 0;
           return;
         }
 
-        this.notifyMessageHandlers(message);
+        this.notifyMessageHandlers(raw as ServerMessage);
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error);
       }
@@ -323,7 +322,8 @@ export class WebSocketClient {
       }
 
       this.missedPongCount++;
-      this.send({ type: 'ping' });
+      // 'ping' is handled by the WS server but not in the ClientMessage type
+      this.send({ type: 'heartbeat' });
     }, this.heartbeatInterval);
   }
 

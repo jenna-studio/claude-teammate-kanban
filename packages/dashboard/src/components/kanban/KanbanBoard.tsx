@@ -34,7 +34,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const { currentBoard, columns, loading, error, fetchBoard } = useBoard(boardId);
   const { tasks, moveTask, fetchTasks } = useTasks(boardId);
   const { selectTask } = useTaskStore();
-  const { openTaskModal, sidebarOpen } = useUIStore();
+  const { openTaskModal } = useUIStore();
 
   const [activeTask, setActiveTask] = React.useState<AgentTask | null>(null);
 

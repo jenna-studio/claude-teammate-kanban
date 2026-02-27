@@ -65,7 +65,7 @@ describe('TaskStore', () => {
     it('should only update the specified task', () => {
       const task1 = createMockTask('task-1', 'todo');
       const task2 = createMockTask('task-2', 'claimed');
-      const { setTasks, moveTask, tasks } = useTaskStore.getState();
+      const { setTasks, moveTask } = useTaskStore.getState();
 
       setTasks([task1, task2]);
       moveTask('task-1', 'in_progress');
@@ -118,7 +118,7 @@ describe('TaskStore', () => {
   describe('addTask', () => {
     it('should add a new task to the store', () => {
       const task = createMockTask('task-1', 'todo');
-      const { addTask, tasks } = useTaskStore.getState();
+      const { addTask } = useTaskStore.getState();
 
       addTask(task);
 

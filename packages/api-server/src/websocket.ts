@@ -91,11 +91,7 @@ export class RealtimeServer {
         console.error(`[WebSocket] Client error (${clientId}):`, error);
       });
 
-      // Send welcome message
-      this.sendToClient(ws, {
-        type: 'task_created',
-        task: {} as any,
-      });
+      // Connection established — client sends 'subscribe' to join a board
     });
 
     this.wss.on('error', (error) => {
