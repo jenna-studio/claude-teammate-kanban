@@ -67,7 +67,7 @@ const AlertItem: React.FC<{
               {alert.title}
             </p>
             {!alert.read && (
-              <span className="h-2 w-2 rounded-full bg-[#FF7BA5] flex-shrink-0" />
+              <span className="h-2 w-2 rounded-full bg-[#FF7BA5] dark:bg-pink-400 flex-shrink-0" />
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">

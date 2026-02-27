@@ -33,10 +33,11 @@ export const BoardView: React.FC<BoardViewProps> = ({ boardId }) => {
   const { connected, connectionState } = useWebSocket(boardId);
   useSystemAlerts();
 
-  // Sync boardId to the store so Header and other components can read it
+  // Sync boardId to the store and remember it as the last-viewed board
   useEffect(() => {
     if (boardId) {
       setCurrentBoard(boardId);
+      localStorage.setItem('agent-track-last-board', boardId);
     }
   }, [boardId, setCurrentBoard]);
 

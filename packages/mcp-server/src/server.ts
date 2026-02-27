@@ -510,6 +510,9 @@ export class AgentKanbanMCPServer extends EventEmitter {
     this.agentRepo.upsert(agent);
     this.emit('agent:registered', agent);
 
+    // Notify dashboard so agent appears immediately
+    notifyApiServer('agent_status_changed', undefined, { agent });
+
     return { agentId };
   }
 
@@ -518,6 +521,14 @@ export class AgentKanbanMCPServer extends EventEmitter {
 
     if (args.sessionId) {
       this.sessionRepo.updateHeartbeat(args.sessionId);
+    }
+
+    // Broadcast updated agent status to dashboard
+    const agent = this.agentRepo.get(args.agentId);
+    if (agent) {
+      // Find the board this agent is working on via active session
+      const boardId = this.findAgentBoard(args.agentId);
+      notifyApiServer('agent_status_changed', boardId, { agent });
     }
 
     return { status: 'ok' };
@@ -546,14 +557,64 @@ export class AgentKanbanMCPServer extends EventEmitter {
 
     this.emit('session:started', session);
 
+    // Notify dashboard that agent is now active on this board
+    const agent = this.agentRepo.get(args.agentId);
+    if (agent) {
+      notifyApiServer('agent_status_changed', args.boardId, { agent });
+    }
+
     return { sessionId };
   }
 
   private endSession(args: any): { status: string } {
+    // Get session info before ending it (for board context)
+    const session = this.sessionRepo.get(args.sessionId);
     this.sessionRepo.endSession(args.sessionId);
     this.emit('session:ended', { sessionId: args.sessionId });
 
+    // Check if agent has any other active sessions; if not, mark offline
+    if (session) {
+      const otherSessions = this.getActiveSessionsForAgent(session.agentId);
+      if (otherSessions.length === 0) {
+        this.agentRepo.updateStatus(session.agentId, AgentStatus.OFFLINE);
+      }
+      const agent = this.agentRepo.get(session.agentId);
+      if (agent) {
+        notifyApiServer('agent_status_changed', session.boardId, { agent });
+      }
+    }
+
     return { status: 'ended' };
+  }
+
+  /**
+   * Find the board an agent is currently working on via their active session.
+   */
+  private findAgentBoard(agentId: string): string | undefined {
+    try {
+      const db = getDatabase();
+      const row = db.prepare(
+        `SELECT board_id FROM sessions WHERE agent_id = ? AND is_active = 1 ORDER BY started_at DESC LIMIT 1`
+      ).get(agentId) as { board_id: string } | undefined;
+      return row?.board_id;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Get active sessions for an agent (to check if they should go offline).
+   */
+  private getActiveSessionsForAgent(agentId: string): Session[] {
+    try {
+      const db = getDatabase();
+      const rows = db.prepare(
+        `SELECT * FROM sessions WHERE agent_id = ? AND is_active = 1`
+      ).all(agentId) as any[];
+      return rows;
+    } catch {
+      return [];
+    }
   }
 
   // Task Management Methods

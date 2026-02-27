@@ -54,8 +54,17 @@ const App: React.FC = () => {
     );
   }
 
-  // Get the first board as default, or use a hardcoded ID
-  const defaultBoardId = boards[0]?.id || 'main-board';
+  // Prefer the most recently created board (last in the list) so new
+  // projects land on their own board instead of the very first one.
+  const lastViewedBoardId = localStorage.getItem('agent-track-last-board');
+  const newestBoard = boards[boards.length - 1];
+  const defaultBoardId =
+    // 1. If we have a stored last-viewed board that still exists, use it
+    (lastViewedBoardId && boards.some((b) => b.id === lastViewedBoardId) ? lastViewedBoardId : null)
+    // 2. Otherwise, use the newest board
+    || newestBoard?.id
+    // 3. Fallback
+    || 'main-board';
 
   return (
     <ErrorBoundary>

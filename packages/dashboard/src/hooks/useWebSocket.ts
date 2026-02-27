@@ -119,7 +119,6 @@ export function useWebSocket(boardId: string | null) {
 
       case 'board_created':
         _addBoard(message.board as Board);
-        window.location.href = `/board/${(message.board as Board).id}`;
         break;
 
       default:
