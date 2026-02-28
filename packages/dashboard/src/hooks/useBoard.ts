@@ -4,6 +4,8 @@
  */
 import { useEffect, useCallback } from 'react';
 import { useBoardStore } from '@/stores/boardStore';
+import { useTaskStore } from '@/stores/taskStore';
+import { useAgentStore } from '@/stores/agentStore';
 import { apiClient } from '@/services/api';
 import type { Board, BoardColumn } from '@/types';
 
@@ -55,7 +57,9 @@ export function useBoard(boardId: string | null) {
   }, [setBoards, setLoading, setError]);
 
   /**
-   * Fetch a specific board with all data
+   * Fetch a specific board with all data.
+   * The board API returns tasks and agents alongside the board itself,
+   * so we populate all stores in one go to avoid empty-board flashes.
    */
   const fetchBoard = useCallback(
     async (id: string) => {
@@ -64,9 +68,23 @@ export function useBoard(boardId: string | null) {
 
       try {
         const response = await apiClient.getBoard(id);
-        updateBoardStore(response.board);
+
+        // Update board with columns in a single logical step
+        // (spread columns onto the board so updateBoard + updateColumns
+        // don't cause an intermediate render without columns)
+        updateBoardStore({ ...response.board, columns: response.columns });
         updateColumns(id, response.columns);
         setStatistics(response.statistics);
+
+        // The board response already contains the full task and agent lists –
+        // populate the stores so the kanban board renders immediately without
+        // waiting for a separate fetch.
+        if (response.tasks) {
+          useTaskStore.getState().setTasks(response.tasks);
+        }
+        if (response.agents) {
+          useAgentStore.getState().setAgents(response.agents);
+        }
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : 'Failed to fetch board';

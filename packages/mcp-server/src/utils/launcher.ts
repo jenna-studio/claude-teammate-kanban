@@ -103,6 +103,8 @@ function openBrowser(url: string): void {
 
 /**
  * Main entry point – start servers if needed, then open the dashboard.
+ * Only opens the browser when the dashboard was not already running,
+ * so repeated MCP server restarts don't spawn duplicate tabs.
  * @param boardId Optional board ID to open directly in the dashboard
  */
 export async function launchDashboard(boardId?: string): Promise<void> {
@@ -137,8 +139,8 @@ export async function launchDashboard(boardId?: string): Promise<void> {
     }
 
     // --- Dashboard dev server ---
-    const dashUp = await isPortListening(DASHBOARD_PORT);
-    if (!dashUp) {
+    const dashAlreadyUp = await isPortListening(DASHBOARD_PORT);
+    if (!dashAlreadyUp) {
       console.error(`[Launcher] Dashboard not detected on port ${DASHBOARD_PORT}, starting…`);
 
       spawnBackground(
@@ -157,10 +159,16 @@ export async function launchDashboard(boardId?: string): Promise<void> {
       console.error(`[Launcher] Dashboard already running on port ${DASHBOARD_PORT}`);
     }
 
-    // --- Open browser ---
-    const url = boardId ? `${DASHBOARD_URL}/board/${boardId}` : DASHBOARD_URL;
-    console.error(`[Launcher] Opening ${url}`);
-    openBrowser(url);
+    // --- Open browser only if the dashboard was freshly started ---
+    // When the dashboard was already running we skip opening another tab
+    // to avoid duplicate browser windows on every MCP server restart.
+    if (!dashAlreadyUp) {
+      const url = boardId ? `${DASHBOARD_URL}/board/${boardId}` : DASHBOARD_URL;
+      console.error(`[Launcher] Opening ${url}`);
+      openBrowser(url);
+    } else {
+      console.error(`[Launcher] Dashboard already open – skipping browser launch`);
+    }
   } catch (error) {
     // Never let launcher errors crash the MCP server
     console.error('[Launcher] Error:', error);
