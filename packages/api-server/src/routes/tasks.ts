@@ -110,6 +110,34 @@ router.get('/:id/code-changes', validate(schemas.taskId, 'params'), asyncHandler
 }));
 
 /**
+ * POST /api/tasks/:id/code-changes
+ * Add code changes to a task
+ */
+router.post('/:id/code-changes', validate(schemas.taskId, 'params'), asyncHandler(async (req, res) => {
+  const db = getDatabase();
+  const taskRepo = new TaskRepository(db);
+
+  const task = taskRepo.getById(req.params.id);
+  if (!task) {
+    throw new HttpError(404, 'Task not found');
+  }
+
+  const changes = Array.isArray(req.body) ? req.body : [req.body];
+
+  for (const change of changes) {
+    if (!change.filePath || !change.changeType || change.diff === undefined) {
+      throw new HttpError(400, 'Each code change requires filePath, changeType, and diff');
+    }
+    taskRepo.addCodeChange(req.params.id, change);
+  }
+
+  res.status(201).json({
+    success: true,
+    data: { added: changes.length },
+  });
+}));
+
+/**
  * POST /api/tasks
  * Create a new task
  */

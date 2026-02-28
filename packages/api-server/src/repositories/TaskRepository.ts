@@ -3,6 +3,7 @@
  */
 
 import Database from 'better-sqlite3';
+import { randomUUID } from 'crypto';
 import { AgentTask, CodeChange, Comment } from '@agent-track/shared';
 
 export class TaskRepository {
@@ -177,6 +178,32 @@ export class TaskRepository {
     `);
 
     return stmt.all(taskId) as CodeChange[];
+  }
+
+  /**
+   * Add a code change to a task
+   * @param taskId - Task ID
+   * @param change - Code change data
+   */
+  addCodeChange(taskId: string, change: CodeChange): void {
+    const id = randomUUID();
+    this.db.prepare(`
+      INSERT INTO code_changes (
+        id, task_id, file_path, change_type, old_path, diff, language,
+        lines_added, lines_deleted, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      taskId,
+      change.filePath,
+      change.changeType,
+      change.oldPath ?? null,
+      change.diff,
+      change.language ?? null,
+      change.linesAdded ?? 0,
+      change.linesDeleted ?? 0,
+      Date.now()
+    );
   }
 
   /**
