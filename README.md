@@ -4,6 +4,8 @@
 
 A comprehensive monitoring and tracking system for AI agents, visualized as an interactive kanban board. Track what each agent is doing, monitor progress, view code changes, and maintain full traceability of all agent activities.
 
+![](./agent-track-dashboard-thumbnail.png)
+
 ## Overview
 
 This project provides:
