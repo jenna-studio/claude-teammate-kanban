@@ -186,7 +186,7 @@ npm run dev:dashboard  # Dashboard only
 ```
 
 This will start:
-- MCP server (stdio transport for Claude Desktop)
+- MCP server (stdio by default, optional Streamable HTTP mode)
 - API server on `http://localhost:3000`
 - WebSocket server on `ws://localhost:8080`
 - Dashboard on `http://localhost:5173`
@@ -258,7 +258,8 @@ await mcp.callTool('complete_task', {
 
 ## MCP Server Integration
 
-The MCP server uses **stdio transport** and exposes 17+ tools for agent instrumentation. Below are setup instructions for every major AI coding tool.
+The MCP server supports both **stdio** (default) and **Streamable HTTP** transport, and exposes 17+ tools for agent instrumentation.
+Use `stdio` for local desktop/CLI clients, and Streamable HTTP for remote MCP clients and hosted agent runtimes.
 
 > **Prerequisites**: Before connecting any client, make sure you've built the project:
 > ```bash
@@ -443,6 +444,27 @@ DATABASE_PATH = "./packages/api-server/data/kanban.db"
 
 ---
 
+### ChatGPT / Remote MCP Clients (Streamable HTTP)
+
+Some MCP clients connect over HTTP instead of launching local stdio processes. For those clients, run this project in Streamable HTTP mode:
+
+```bash
+pnpm --filter @agent-track/mcp-server build
+MCP_TRANSPORT=http MCP_HTTP_HOST=127.0.0.1 MCP_HTTP_PORT=8787 pnpm --filter @agent-track/mcp-server start
+```
+
+This exposes the MCP endpoint at:
+
+```text
+http://127.0.0.1:8787/mcp
+```
+
+Use that URL in any client that asks for an MCP server endpoint (including ChatGPT-compatible remote MCP integrations, hosted agents, or custom orchestrators).
+
+> **Important**: This server does not enforce auth by default. Keep it on localhost or add a reverse proxy with authentication before exposing it on a network.
+
+---
+
 ### Android Studio (Gemini)
 
 Android Studio supports MCP servers through the Gemini integration. Stdio transport is supported in Android Studio **2025.2+** (via JVM-based proxy).
@@ -485,6 +507,7 @@ Android Studio supports MCP servers through the Gemini integration. Stdio transp
 | **Gemini CLI** | `.gemini/settings.json` | JSON | stdio |
 | **Codex CLI** | `.codex/config.toml` | TOML | stdio |
 | **Android Studio** | Settings > Tools > AI > MCP Servers | JSON | stdio |
+| **ChatGPT-compatible MCP clients** | Remote MCP URL | URL | streamable-http |
 
 ---
 
@@ -519,6 +542,12 @@ Once connected, the following tools are available to AI agents:
 ```bash
 # MCP Server
 DATABASE_PATH=./data/kanban.db
+AUTO_LAUNCH_DASHBOARD=true             # Default: true. Set false to disable browser auto-open.
+MCP_TRANSPORT=stdio                     # stdio | http | streamable-http
+MCP_HTTP_HOST=127.0.0.1                # Used when MCP_TRANSPORT=http
+MCP_HTTP_PORT=8787                     # Used when MCP_TRANSPORT=http
+MCP_HTTP_PATH=/mcp                     # Used when MCP_TRANSPORT=http
+MCP_BOOTSTRAP_PROJECT_BOARD=true       # Auto-create board for current cwd in stdio mode
 
 # API Server
 API_PORT=3000

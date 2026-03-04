@@ -7,6 +7,12 @@ import { initDatabase, closeDatabase } from './database.js';
 import { createApiServer, startApiServer } from './api.js';
 import { RealtimeServer } from './websocket.js';
 import { setWebSocketServer } from './routes/index.js';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const defaultDbPath = resolve(__dirname, '../data/kanban.db');
 
 /**
  * Server configuration from environment variables
@@ -14,7 +20,7 @@ import { setWebSocketServer } from './routes/index.js';
 const config = {
   apiPort: parseInt(process.env.API_PORT || '3000'),
   wsPort: parseInt(process.env.WEBSOCKET_PORT || '8080'),
-  dbPath: process.env.DATABASE_PATH || './data/kanban.db',
+  dbPath: process.env.DATABASE_PATH || defaultDbPath,
   corsOrigin: process.env.CORS_ORIGIN || '*',
   nodeEnv: process.env.NODE_ENV || 'development',
 };

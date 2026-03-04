@@ -18,6 +18,7 @@
     "build:mcp": "npm run build --workspace=packages/mcp-server",
     "build:api": "npm run build --workspace=packages/api-server",
     "build:dashboard": "npm run build --workspace=packages/dashboard",
+    "start:mcp:http": "npm run start:http --workspace=packages/mcp-server",
     "start": "npm run start --workspace=packages/api-server",
     "lint": "eslint . --ext .ts,.tsx",
     "type-check": "tsc --noEmit",

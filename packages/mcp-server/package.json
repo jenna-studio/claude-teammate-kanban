@@ -12,6 +12,7 @@
     "build": "npx tsc",
     "dev": "npx tsc --watch",
     "start": "node dist/index.js",
+    "start:http": "MCP_TRANSPORT=http node dist/index.js",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "keywords": ["mcp", "agent", "instrumentation"],

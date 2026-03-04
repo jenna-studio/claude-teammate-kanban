@@ -4,6 +4,7 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -29,6 +30,10 @@ import { AgentStatus, TaskStatus, TaskImportance } from '@agent-track/shared';
 import { DEFAULT_COLUMNS } from './db/schema.js';
 import { notifyApiServer } from './utils/notifier.js';
 
+interface AgentKanbanMCPServerOptions {
+  cleanStaleDataOnStart?: boolean;
+}
+
 export class AgentKanbanMCPServer extends EventEmitter {
   private server: Server;
   private taskRepo: TaskRepository;
@@ -36,7 +41,7 @@ export class AgentKanbanMCPServer extends EventEmitter {
   private boardRepo: BoardRepository;
   private sessionRepo: SessionRepository;
 
-  constructor(dbPath?: string) {
+  constructor(dbPath?: string, options: AgentKanbanMCPServerOptions = {}) {
     super();
 
     // Initialize database
@@ -44,7 +49,9 @@ export class AgentKanbanMCPServer extends EventEmitter {
 
     // Clean slate: remove stale agents (and their tasks/sessions via CASCADE)
     // so the dashboard only shows agents from the current session.
-    this.cleanStaleData();
+    if (options.cleanStaleDataOnStart !== false) {
+      this.cleanStaleData();
+    }
 
     // Initialize repositories
     this.taskRepo = new TaskRepository();
@@ -885,9 +892,17 @@ export class AgentKanbanMCPServer extends EventEmitter {
     return result.boardId;
   }
 
+  async connect(transport: Transport) {
+    await this.server.connect(transport);
+  }
+
   async run() {
     const transport = new StdioServerTransport();
-    await this.server.connect(transport);
+    await this.connect(transport);
     console.error('Agent Kanban MCP Server running on stdio');
+  }
+
+  async close() {
+    await this.server.close();
   }
 }

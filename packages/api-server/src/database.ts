@@ -5,7 +5,12 @@
 
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
-import { dirname } from 'path';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const defaultDbPath = resolve(__dirname, '../data/kanban.db');
 
 let db: Database.Database | null = null;
 
@@ -15,7 +20,7 @@ let db: Database.Database | null = null;
  * @returns Database instance
  * @throws Error if database initialization fails
  */
-export function initDatabase(dbPath: string = './data/kanban.db'): Database.Database {
+export function initDatabase(dbPath: string = defaultDbPath): Database.Database {
   if (db) {
     return db;
   }
