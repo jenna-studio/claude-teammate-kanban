@@ -3,7 +3,7 @@
  * Root application component with routing and error boundary
  */
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { BoardView } from '@/routes/BoardView';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
@@ -11,10 +11,41 @@ import { useBoard } from '@/hooks/useBoard';
 import { useSettingsStore } from '@/stores/settingsStore';
 
 /**
+ * Component to handle query parameter redirects
+ */
+const QueryParamRedirect: React.FC = () => {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const boardId = searchParams.get('board');
+
+  if (boardId) {
+    return <Navigate to={`/board/${boardId}`} replace />;
+  }
+
+  return <RootRedirect />;
+};
+
+/**
+ * Component to handle root redirect
+ */
+const RootRedirect: React.FC = () => {
+  const { boards } = useBoard(null);
+
+  const lastViewedBoardId = localStorage.getItem('agent-track-last-board');
+  const newestBoard = boards[boards.length - 1];
+  const defaultBoardId =
+    (lastViewedBoardId && boards.some((b) => b.id === lastViewedBoardId) ? lastViewedBoardId : null)
+    || newestBoard?.id
+    || 'main-board';
+
+  return <Navigate to={`/board/${defaultBoardId}`} replace />;
+};
+
+/**
  * Main application component
  */
 const App: React.FC = () => {
-  const { boards, fetchBoards } = useBoard(null);
+  const { fetchBoards } = useBoard(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const { theme } = useSettingsStore();
 
@@ -54,23 +85,11 @@ const App: React.FC = () => {
     );
   }
 
-  // Prefer the most recently created board (last in the list) so new
-  // projects land on their own board instead of the very first one.
-  const lastViewedBoardId = localStorage.getItem('agent-track-last-board');
-  const newestBoard = boards[boards.length - 1];
-  const defaultBoardId =
-    // 1. If we have a stored last-viewed board that still exists, use it
-    (lastViewedBoardId && boards.some((b) => b.id === lastViewedBoardId) ? lastViewedBoardId : null)
-    // 2. Otherwise, use the newest board
-    || newestBoard?.id
-    // 3. Fallback
-    || 'main-board';
-
   return (
     <ErrorBoundary>
       <Router>
         <Routes>
-          <Route path="/" element={<Navigate to={`/board/${defaultBoardId}`} replace />} />
+          <Route path="/" element={<QueryParamRedirect />} />
           <Route path="/board/:boardId" element={<BoardViewWrapper />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
