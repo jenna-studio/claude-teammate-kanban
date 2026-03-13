@@ -117,9 +117,15 @@ export function useWebSocket(boardId: string | null) {
         console.log('Comment added:', message.comment);
         break;
 
-      case 'board_created':
-        _addBoard(message.board as Board);
+      case 'board_created': {
+        const newBoard = message.board as Board;
+        _addBoard(newBoard);
+        // Remember the newest board so RootRedirect picks it up on next visit.
+        if (newBoard.id) {
+          localStorage.setItem('agent-track-last-board', newBoard.id);
+        }
         break;
+      }
 
       default:
         console.warn('Unknown message type:', message);

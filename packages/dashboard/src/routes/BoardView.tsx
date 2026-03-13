@@ -10,6 +10,7 @@ import { AgentDetailModal } from '@/components/agent/AgentDetailModal';
 import { SettingsModal } from '@/components/settings/SettingsModal';
 import { Header } from '@/components/common/Header';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { usePollingFallback } from '@/hooks/usePollingFallback';
 import { useSystemAlerts } from '@/hooks/useSystemAlerts';
 import { useUIStore } from '@/stores/uiStore';
 import { useBoardStore } from '@/stores/boardStore';
@@ -31,6 +32,7 @@ export const BoardView: React.FC<BoardViewProps> = ({ boardId }) => {
   const { sidebarOpen } = useUIStore();
   const { setCurrentBoard } = useBoardStore();
   const { connected, connectionState } = useWebSocket(boardId);
+  usePollingFallback(boardId);
   useSystemAlerts();
 
   // Sync boardId to the store and remember it as the last-viewed board
@@ -53,8 +55,8 @@ export const BoardView: React.FC<BoardViewProps> = ({ boardId }) => {
                   style={{ backgroundColor: "#FFD96620", borderColor: "#FFD96650" }}>
                   <p className="text-sm" style={{ color: "#b8860b" }}>
                       {connectionState === "RECONNECTING"
-                          ? "Reconnecting to server..."
-                          : "Not connected to real-time server"}
+                          ? "Reconnecting to server... (polling for updates)"
+                          : "Not connected to real-time server (polling for updates)"}
                   </p>
               </div>
           )}
