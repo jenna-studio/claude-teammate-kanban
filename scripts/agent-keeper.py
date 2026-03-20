@@ -184,7 +184,7 @@ class AgentKeeper:
         self.mcp_agent_name = None
 
         self.board_id       = None
-        self.current_task   = None   # {"id": ..., "title": ...}
+        self.file_tasks     = {}     # file_path -> {"id": ..., "title": ...}
         self.last_hash      = None
         self.last_change_ts = 0.0
 
@@ -363,38 +363,44 @@ class AgentKeeper:
             print(f"[keeper] Task created : {task['id']} — {title}")
         return task
 
-    def _complete_current_task(self, summary=""):
-        if not self.current_task:
-            return
-        tid = self.current_task["id"]
-        PATCH(f"/api/tasks/{tid}", {
-            "status":        "done",
-            "progress":      100,
-            "currentAction": summary or "Completed",
-        })
-        self._notify("task_updated", {"taskId": tid})
-        print(f"[keeper] Task done    : {tid}  ({summary})")
-        self.current_task = None
+    def _complete_all_tasks(self, summary=""):
+        for file_path, task in list(self.file_tasks.items()):
+            tid = task["id"]
+            PATCH(f"/api/tasks/{tid}", {
+                "status":        "done",
+                "progress":      100,
+                "currentAction": summary or "Completed",
+            })
+            self._notify("task_updated", {"taskId": tid})
+            print(f"[keeper] Task done    : {tid}  ({Path(file_path).name})")
+        self.file_tasks = {}
 
-    def _resume_existing_task(self):
-        """On startup, pick up any already-in-progress task for this board."""
+    def _resume_existing_tasks(self):
+        """On startup, pick up any already-in-progress tasks for this board."""
         if not self.board_id:
             return
         aid = self._agent_id_for_task()
         resp = GET("/api/tasks", {"boardId": self.board_id, "agentId": aid, "status": "in_progress"})
         tasks = resp.get("data") or []
-        if tasks:
-            t = tasks[0]
-            self.current_task = {"id": t["id"], "title": t.get("title", "")}
+        for t in tasks:
+            # Re-key by the first file in the task, or task id as fallback
+            files = t.get("files") or []
+            key = files[0] if files else t["id"]
+            self.file_tasks[key] = {"id": t["id"], "title": t.get("title", "")}
             print(f"[keeper] Resumed task : {t['id']} — {t.get('title')}")
 
-    def _ensure_task(self, title, description=""):
-        if self.current_task:
-            return self.current_task
-        task = self._create_task(title, description)
+    def _ensure_file_task(self, file_path, change_type, branch):
+        """Get or create a dedicated task for a single file."""
+        if file_path in self.file_tasks:
+            return self.file_tasks[file_path]
+        basename = Path(file_path).name
+        title = f"Edit {basename}"
+        desc  = f"Branch: `{branch}`\nFile: `{file_path}` ({change_type})"
+        task  = self._create_task(title, desc)
         if task and task.get("id"):
-            self.current_task = {"id": task["id"], "title": title}
-        return self.current_task
+            self.file_tasks[file_path] = {"id": task["id"], "title": title}
+            return self.file_tasks[file_path]
+        return None
 
     # ── git sync ──────────────────────────────────────────────────────────────
 
@@ -407,48 +413,40 @@ class AgentKeeper:
         if not changed:
             return
 
-        title  = _task_title_from_files(changed)
         branch = git_branch(self.project)
-        desc   = (
-            f"Branch: `{branch}`\n"
-            f"Files changed: {len(changed)}\n\n"
-            + "\n".join(f"- `{f['filePath']}` ({f['changeType']})" for f in changed[:15])
-        )
-        task = self._ensure_task(title, desc)
-        if not task:
-            return
+        lines  = git_numstat(self.project)
 
-        tid   = task["id"]
-        paths = [f["filePath"] for f in changed]
-        lines = git_numstat(self.project)
-        total = lines["added"] + lines["removed"]
-        prog  = min(10 + total // 4, 85)
+        # One task per changed file
+        for fi in changed:
+            file_path   = fi["filePath"]
+            change_type = fi["changeType"]
 
-        # Update task metadata
-        PATCH(f"/api/tasks/{tid}", {
-            "title":         title,
-            "files":         paths,
-            "linesChanged":  lines,
-            "currentAction": f"Modifying {len(changed)} file(s): "
-                             + ", ".join(Path(p).name for p in paths[:4]),
-            "progress":      prog,
-        })
-
-        # Push per-file diffs (cap at 8 files)
-        for fi in changed[:8]:
-            diff = git_file_diff(fi["filePath"], self.project)
-            if not diff:
+            task = self._ensure_file_task(file_path, change_type, branch)
+            if not task:
                 continue
-            POST(f"/api/tasks/{tid}/code-changes", {
-                "filePath":     fi["filePath"],
-                "changeType":   fi["changeType"],
-                "diff":         diff,
-                "linesAdded":   lines["added"],
-                "linesRemoved": lines["removed"],
+
+            tid  = task["id"]
+            prog = min(10 + (lines["added"] + lines["removed"]) // 4, 85)
+
+            PATCH(f"/api/tasks/{tid}", {
+                "files":         [file_path],
+                "currentAction": f"Modifying {Path(file_path).name}",
+                "progress":      prog,
             })
 
-        self._notify("task_updated", {"taskId": tid})
-        print(f"[keeper] Synced {len(changed):2d} file(s) +{lines['added']}/-{lines['removed']} lines  →  {tid}")
+            diff = git_file_diff(file_path, self.project)
+            if diff:
+                POST(f"/api/tasks/{tid}/code-changes", {
+                    "filePath":     file_path,
+                    "changeType":   change_type,
+                    "diff":         diff,
+                    "linesAdded":   lines["added"],
+                    "linesRemoved": lines["removed"],
+                })
+
+            self._notify("task_updated", {"taskId": tid})
+
+        print(f"[keeper] Synced {len(changed):2d} file(s) +{lines['added']}/-{lines['removed']} lines")
 
     # ── main loop ─────────────────────────────────────────────────────────────
 
@@ -501,7 +499,7 @@ class AgentKeeper:
         else:
             print("[keeper] No MCP agent found yet — will discover once Claude starts")
 
-        self._resume_existing_task()
+        self._resume_existing_tasks()
         self._watch_loop()
 
     def stop(self):
