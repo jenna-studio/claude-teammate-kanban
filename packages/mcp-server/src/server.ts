@@ -8,6 +8,8 @@ import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { EventEmitter } from 'events';
 import { randomUUID } from 'crypto';
@@ -68,6 +70,7 @@ export class AgentKanbanMCPServer extends EventEmitter {
       {
         capabilities: {
           tools: {},
+          prompts: {},
         },
       }
     );
@@ -359,6 +362,58 @@ export class AgentKanbanMCPServer extends EventEmitter {
         },
       ],
     }));
+
+    // List available prompts
+    this.server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+      prompts: [
+        {
+          name: 'agent-track-instructions',
+          description: 'Instructions for how to use the agent-track tools correctly',
+        },
+      ],
+    }));
+
+    // Return prompt content
+    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+      if (request.params.name !== 'agent-track-instructions') {
+        throw new Error(`Unknown prompt: ${request.params.name}`);
+      }
+      return {
+        description: 'Agent Track Dashboard — usage instructions',
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: `You are connected to the Agent Track Dashboard via MCP. Follow these rules at all times:
+
+## Task granularity
+- Create ONE task per distinct unit of work. Never bundle multiple unrelated changes into one task card.
+- Each task should represent a single file change, bug fix, feature, or investigation.
+
+## Starting a task
+When calling start_task, always include:
+- tags: pick all that apply — frontend, backend, api, database, ui, testing, bug, feature, refactor, performance, security, documentation, devops, config, styling, cleanup, hotfix, research, review
+- importance: set appropriately (critical, high, medium, low)
+- description: a brief sentence explaining what the task involves
+
+## Completing a task
+Before calling complete_task, always call add_comment with:
+- A summary of what was done
+- Any decisions made or issues encountered
+- Which files were changed and why
+
+Example:
+  add_comment(taskId, author="<your agent name>", content="Fixed null check in server.ts — the root cause was ...")
+  complete_task(taskId, summary="Fixed null check bug")
+
+## Progress updates
+Call update_task_progress when switching between files or finishing a significant step, not only at the end.`,
+            },
+          },
+        ],
+      };
+    });
 
     // Handle tool calls
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
