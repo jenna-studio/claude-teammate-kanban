@@ -16,7 +16,7 @@ export function setWebSocketServer(server: RealtimeServer): void {
   wsServer = server;
 }
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
 
 /**
  * POST /api/notify
