@@ -31,6 +31,7 @@ Thumbs.db
 *.db-shm
 *.db-wal
 data/
+!data/.gitkeep
 
 # Logs
 logs/
