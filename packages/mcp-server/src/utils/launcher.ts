@@ -102,6 +102,29 @@ function openBrowser(url: string): void {
 }
 
 /**
+ * Spawn the agent-keeper Python script as a detached background process.
+ * The keeper keeps agent heartbeats alive and auto-syncs git changes to the
+ * dashboard — it runs for the lifetime of the coding session.
+ */
+function launchKeeper(projectPath: string): void {
+  const keeperScript = resolve(PROJECT_ROOT, 'scripts/agent-keeper.py');
+  // Try python3 first, fall back to python
+  const python = process.platform === 'win32' ? 'python' : 'python3';
+
+  try {
+    const child = spawn(python, [keeperScript, projectPath, '--no-api', '--no-dashboard'], {
+      cwd: PROJECT_ROOT,
+      detached: true,
+      stdio: 'ignore',
+    });
+    child.unref();
+    console.error(`[Launcher] Keeper started (PID ${child.pid}) watching ${projectPath}`);
+  } catch (err) {
+    console.error('[Launcher] Could not start agent-keeper.py:', err);
+  }
+}
+
+/**
  * Main entry point – start servers if needed, then open the dashboard.
  * @param boardId Optional board ID to open directly in the dashboard
  */
@@ -156,6 +179,9 @@ export async function launchDashboard(boardId?: string): Promise<void> {
     } else {
       console.error(`[Launcher] Dashboard already running on port ${DASHBOARD_PORT}`);
     }
+
+    // Start the keeper to maintain heartbeats and auto-sync git changes
+    launchKeeper(process.cwd());
 
     // Always open browser on MCP startup.
     const url = boardId ? `${DASHBOARD_URL}/board/${boardId}` : DASHBOARD_URL;
