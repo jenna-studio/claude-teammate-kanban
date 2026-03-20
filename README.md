@@ -32,7 +32,7 @@ Tasks are created and updated continuously as the agent works. Code diffs appear
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/agent-track-dashboard.git
+git clone https://github.com/jenna-studio/agent-track-dashboard.git
 cd agent-track-dashboard
 pnpm install
 pnpm build
