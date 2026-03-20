@@ -14,7 +14,7 @@
     "dev:mcp": "npm run dev --workspace=packages/mcp-server",
     "dev:api": "npm run dev --workspace=packages/api-server",
     "dev:dashboard": "npm run dev --workspace=packages/dashboard",
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspace=packages/shared && npm run build --workspace=packages/mcp-server && npm run build --workspace=packages/api-server && npm run build --workspace=packages/dashboard",
     "build:mcp": "npm run build --workspace=packages/mcp-server",
     "build:api": "npm run build --workspace=packages/api-server",
     "build:dashboard": "npm run build --workspace=packages/dashboard",
