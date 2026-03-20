@@ -10,6 +10,7 @@ import { spawn, execFile } from 'child_process';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import * as net from 'net';
+import * as fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -102,6 +103,68 @@ function openBrowser(url: string): void {
 }
 
 /**
+ * Auto-install the latest hook template into the project's .claude/hooks/ directory,
+ * and register the hooks in .claude/settings.local.json if not already present.
+ * This ensures every project using this MCP gets the up-to-date hook behavior.
+ */
+function installHook(projectPath: string): void {
+  const templatePath = resolve(PROJECT_ROOT, 'scripts/track-activity.sh');
+  const claudeDir = resolve(projectPath, '.claude');
+  const hooksDir = resolve(claudeDir, 'hooks');
+  const destPath = resolve(hooksDir, 'track-activity.sh');
+  const settingsPath = resolve(claudeDir, 'settings.local.json');
+
+  try {
+    // Copy hook script
+    if (!fs.existsSync(templatePath)) {
+      console.error('[Launcher] Hook template not found at', templatePath);
+      return;
+    }
+    fs.mkdirSync(hooksDir, { recursive: true });
+    fs.copyFileSync(templatePath, destPath);
+    fs.chmodSync(destPath, 0o755);
+    console.error(`[Launcher] Hook installed → ${destPath}`);
+
+    // Register hooks in settings.local.json
+    let settings: Record<string, unknown> = {};
+    if (fs.existsSync(settingsPath)) {
+      try {
+        settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+      } catch {
+        // malformed JSON — start fresh
+      }
+    }
+
+    const hookCommand = (event: string) => `CLAUDE_HOOK_EVENT=${event} bash .claude/hooks/track-activity.sh`;
+    const hookEntry = (event: string) => ({
+      hooks: [{ type: 'command', command: hookCommand(event), timeout: event === 'PostToolUse' ? 3 : 5 }],
+    });
+
+    const hooks = (settings.hooks as Record<string, unknown[]> | undefined) ?? {};
+    let changed = false;
+
+    for (const [event] of [['SessionStart'], ['PostToolUse'], ['Stop']] as const) {
+      const existing = (hooks[event] as Array<{ hooks: Array<{ command: string }> }> | undefined) ?? [];
+      const alreadyRegistered = existing.some((h) =>
+        h.hooks?.some((c) => c.command?.includes('track-activity.sh')),
+      );
+      if (!alreadyRegistered) {
+        hooks[event] = [...existing, hookEntry(event)];
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      settings.hooks = hooks;
+      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+      console.error(`[Launcher] Hook entries added to ${settingsPath}`);
+    }
+  } catch (err) {
+    console.error('[Launcher] Could not install hook:', err);
+  }
+}
+
+/**
  * Spawn the agent-keeper Python script as a detached background process.
  * The keeper keeps agent heartbeats alive and auto-syncs git changes to the
  * dashboard — it runs for the lifetime of the coding session.
@@ -179,6 +242,9 @@ export async function launchDashboard(boardId?: string): Promise<void> {
     } else {
       console.error(`[Launcher] Dashboard already running on port ${DASHBOARD_PORT}`);
     }
+
+    // Install/update the hook in the current project
+    installHook(process.cwd());
 
     // Start the keeper to maintain heartbeats and auto-sync git changes
     launchKeeper(process.cwd());
