@@ -114,8 +114,24 @@ def git_status_short(cwd):   return _git(["status", "--short"], cwd)
 def git_log_oneline(cwd, n=5): return _git(["log", "--oneline", f"-{n}"], cwd)
 
 
+NOISE_DIRS = {
+    "node_modules", "dist", "build", ".git", ".next", ".nuxt",
+    "__pycache__", ".venv", "venv", ".tox", "coverage", ".nyc_output",
+    ".cache", ".parcel-cache", ".turbo", "out", ".output", "vendor",
+}
+NOISE_EXTS = {".lock", ".log", ".map", ".pyc", ".pyo"}
+
+def _is_noise(file_path: str) -> bool:
+    parts = Path(file_path).parts
+    if any(p in NOISE_DIRS for p in parts):
+        return True
+    if Path(file_path).suffix in NOISE_EXTS:
+        return True
+    return False
+
+
 def git_changed_files(cwd):
-    """Uncommitted changes (staged + unstaged + untracked)."""
+    """Uncommitted changes (staged + unstaged + untracked), noise-filtered."""
     files = []
     type_map = {"M": "modified", "A": "added", "D": "deleted", "R": "renamed", "C": "copied"}
 
@@ -124,12 +140,14 @@ def git_changed_files(cwd):
     for line in out.splitlines():
         parts = line.split("\t")
         if len(parts) >= 2:
-            files.append({"filePath": parts[-1],
-                          "changeType": type_map.get(parts[0][0], "modified")})
+            fp = parts[-1]
+            if not _is_noise(fp):
+                files.append({"filePath": fp,
+                              "changeType": type_map.get(parts[0][0], "modified")})
 
     # untracked new files
     for f in _git(["ls-files", "--others", "--exclude-standard"], cwd).splitlines():
-        if f:
+        if f and not _is_noise(f):
             files.append({"filePath": f, "changeType": "added"})
 
     return files
@@ -183,10 +201,11 @@ class AgentKeeper:
         self.mcp_agent_id   = None  # set once we find it
         self.mcp_agent_name = None
 
-        self.board_id       = None
-        self.file_tasks     = {}     # file_path -> {"id": ..., "title": ...}
-        self.last_hash      = None
-        self.last_change_ts = 0.0
+        self.board_id         = None
+        self.file_tasks       = {}   # file_path -> {"id": ..., "title": ...}
+        self.submitted_diffs  = {}   # file_path -> last diff hash submitted
+        self.last_hash        = None
+        self.last_change_ts   = 0.0
 
         self._beat_ts_monitor  = 0.0
         self._beat_ts_mcp      = 0.0
@@ -374,6 +393,7 @@ class AgentKeeper:
             self._notify("task_updated", {"taskId": tid})
             print(f"[keeper] Task done    : {tid}  ({Path(file_path).name})")
         self.file_tasks = {}
+        self.submitted_diffs = {}
 
     def _resume_existing_tasks(self):
         """On startup, pick up any already-in-progress tasks for this board."""
@@ -413,6 +433,12 @@ class AgentKeeper:
         if not changed:
             return
 
+        # Cap to 5 files per cycle to avoid task explosion
+        MAX_FILES = 5
+        if len(changed) > MAX_FILES:
+            print(f"[keeper] {len(changed)} changed files — capping to {MAX_FILES}")
+            changed = changed[:MAX_FILES]
+
         branch = git_branch(self.project)
         lines  = git_numstat(self.project)
 
@@ -434,15 +460,19 @@ class AgentKeeper:
                 "progress":      prog,
             })
 
+            # Only submit diff if it has changed since last submission
             diff = git_file_diff(file_path, self.project)
             if diff:
-                POST(f"/api/tasks/{tid}/code-changes", {
-                    "filePath":     file_path,
-                    "changeType":   change_type,
-                    "diff":         diff,
-                    "linesAdded":   lines["added"],
-                    "linesRemoved": lines["removed"],
-                })
+                diff_hash = hash(diff)
+                if self.submitted_diffs.get(file_path) != diff_hash:
+                    POST(f"/api/tasks/{tid}/code-changes", {
+                        "filePath":     file_path,
+                        "changeType":   change_type,
+                        "diff":         diff,
+                        "linesAdded":   lines["added"],
+                        "linesRemoved": lines["removed"],
+                    })
+                    self.submitted_diffs[file_path] = diff_hash
 
             self._notify("task_updated", {"taskId": tid})
 
