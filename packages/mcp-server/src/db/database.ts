@@ -8,6 +8,8 @@
 import Database from 'better-sqlite3';
 import { SCHEMA_SQL, DEFAULT_COLUMNS } from './schema.js';
 import { randomUUID } from 'crypto';
+import { mkdirSync } from 'fs';
+import { dirname } from 'path';
 import { DatabaseError, DEFAULT_BOARD_SETTINGS } from '../types/index.js';
 import { safeJsonStringify } from '../utils/validation.js';
 
@@ -54,6 +56,9 @@ export function initDatabase(options: DatabaseOptions = {}): Database.Database {
   const { path = DEFAULT_DB_PATH, verbose = false, timeout = 5000 } = options;
 
   try {
+    // Ensure directory exists
+    mkdirSync(dirname(path), { recursive: true });
+
     // Create database connection
     db = new Database(path, { verbose: verbose ? console.log : undefined, timeout });
 
