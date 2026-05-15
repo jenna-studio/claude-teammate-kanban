@@ -78,6 +78,30 @@ router.patch('/:id', validate(schemas.agentId, 'params'), asyncHandler(async (re
 }));
 
 /**
+ * DELETE /api/agents/:id
+ * Remove an ended agent from the live pool once it has no active work
+ */
+router.delete('/:id', validate(schemas.agentId, 'params'), asyncHandler(async (req, res) => {
+  const db = getDatabase();
+  const agentRepo = new AgentRepository(db);
+
+  const agent = agentRepo.getById(req.params.id);
+  if (!agent) {
+    throw new HttpError(404, 'Agent not found');
+  }
+
+  const archived = agentRepo.archiveIfEnded(req.params.id);
+  if (!archived) {
+    throw new HttpError(409, 'Agent still has active work or an active session');
+  }
+
+  res.json({
+    success: true,
+    data: archived,
+  });
+}));
+
+/**
  * GET /api/agents/:id
  * Get agent by ID
  */

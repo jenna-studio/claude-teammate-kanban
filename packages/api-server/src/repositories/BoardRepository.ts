@@ -176,7 +176,9 @@ export class BoardRepository {
     `);
 
     const rows = stmt.all(boardId, boardId) as any[];
-    return rows.map(row => this.mapRowToAgent(row));
+    return rows
+      .map(row => this.mapRowToAgent(row))
+      .filter(agent => !this.isHidden(agent.metadata));
   }
 
   /**
@@ -515,5 +517,9 @@ export class BoardRepository {
       }
     }
     return value;
+  }
+
+  private isHidden(metadata?: Record<string, unknown>): boolean {
+    return Boolean(metadata && metadata.hidden === true);
   }
 }

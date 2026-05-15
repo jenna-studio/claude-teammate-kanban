@@ -23,18 +23,11 @@ const dbPath = process.env.DATABASE_PATH || defaultDbPath;
 const transportMode = (process.env.MCP_TRANSPORT || 'stdio').toLowerCase();
 
 function ensureProjectBoard(server: AgentKanbanMCPServer): string {
-  // Find or create a board for the current working directory so the
-  // browser opens directly to the correct project board.
+  // Always create a fresh board for the current working directory so
+  // every coding session starts from a clean dashboard state.
   const cwd = process.cwd();
-  let boardId = server.findBoardByProjectPath(cwd);
-
-  if (boardId) {
-    console.error(`[MCP] Found existing board ${boardId} for project ${cwd}`);
-  } else {
-    // Auto-create a board for this project
-    boardId = server.createBoardForProject(cwd);
-    console.error(`[MCP] Created new board ${boardId} for project ${cwd}`);
-  }
+  const boardId = server.createBoardForProject(cwd);
+  console.error(`[MCP] Created fresh board ${boardId} for project ${cwd}`);
 
   return boardId;
 }

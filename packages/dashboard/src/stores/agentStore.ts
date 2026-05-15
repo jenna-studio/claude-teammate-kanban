@@ -4,6 +4,10 @@
 import { create } from 'zustand';
 import type { Agent, AgentStatus } from '@/types';
 
+function isHidden(agent: Agent): boolean {
+  return Boolean(agent.metadata && (agent.metadata as Record<string, unknown>).hidden === true);
+}
+
 interface AgentStore {
   /** All agents */
   agents: Agent[];
@@ -61,10 +65,13 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
   error: null,
 
   setAgents: (agents) => {
-    set({ agents, error: null });
+    set({ agents: agents.filter((agent) => !isHidden(agent)), error: null });
   },
 
   addAgent: (agent) => {
+    if (isHidden(agent)) {
+      return;
+    }
     set((state) => ({
       agents: [...state.agents, agent],
       error: null,
@@ -73,6 +80,13 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
 
   updateAgent: (updatedAgent) => {
     set((state) => {
+      if (isHidden(updatedAgent)) {
+        return {
+          agents: state.agents.filter((agent) => agent.id !== updatedAgent.id),
+          error: null,
+        };
+      }
+
       const exists = state.agents.some((agent) => agent.id === updatedAgent.id);
       return {
         agents: exists

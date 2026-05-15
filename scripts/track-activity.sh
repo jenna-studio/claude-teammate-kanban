@@ -26,6 +26,10 @@ api_patch() {
     -d "$2" 2>/dev/null
 }
 
+api_delete() {
+  curl -s -X DELETE "$API_URL/$1" 2>/dev/null
+}
+
 # Check if API server is reachable
 if ! curl -s --max-time 1 "$API_URL/../health" >/dev/null 2>&1; then
   exit 0
@@ -33,12 +37,16 @@ fi
 
 case "$HOOK_TYPE" in
   SessionStart)
-    # Get the first board
-    BOARD_ID=$(curl -s "$API_URL/boards" 2>/dev/null | python3 -c "
+    # Get the newest board for the current project, falling back to the newest board overall
+    BOARD_ID=$(PROJECT_PATH="$PWD" curl -s "$API_URL/boards" 2>/dev/null | python3 -c "
 import sys, json
+import os
 data = json.load(sys.stdin)
 boards = data.get('data', [])
-print(boards[0]['id'] if boards else '')
+project_path = os.environ.get('PROJECT_PATH', '')
+matching = [board for board in boards if board.get('projectPath') == project_path]
+selected = matching[0] if matching else (boards[0] if boards else {})
+print(selected.get('id', ''))
 " 2>/dev/null)
 
     if [ -z "$BOARD_ID" ]; then
@@ -346,6 +354,14 @@ for file_path, task_id in file_tasks.items():
 # Mark agent idle
 if agent_id:
     http_patch(f"agents/{agent_id}", {"status": "idle"})
+    try:
+        req = urllib.request.Request(
+            f"{API_URL}/agents/{agent_id}",
+            method='DELETE'
+        )
+        urllib.request.urlopen(req, timeout=3)
+    except Exception:
+        pass
 
 PYEOF
 

@@ -32,7 +32,7 @@ const RootRedirect: React.FC = () => {
   const { boards } = useBoard(null);
 
   const lastViewedBoardId = localStorage.getItem('agent-track-last-board');
-  const newestBoard = boards[boards.length - 1];
+  const newestBoard = boards[0];
   const defaultBoardId =
     (lastViewedBoardId && boards.some((b) => b.id === lastViewedBoardId) ? lastViewedBoardId : null)
     || newestBoard?.id

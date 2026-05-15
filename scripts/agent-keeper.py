@@ -395,20 +395,6 @@ class AgentKeeper:
         self.file_tasks = {}
         self.submitted_diffs = {}
 
-    def _resume_existing_tasks(self):
-        """On startup, pick up any already-in-progress tasks for this board."""
-        if not self.board_id:
-            return
-        aid = self._agent_id_for_task()
-        resp = GET("/api/tasks", {"boardId": self.board_id, "agentId": aid, "status": "in_progress"})
-        tasks = resp.get("data") or []
-        for t in tasks:
-            # Re-key by the first file in the task, or task id as fallback
-            files = t.get("files") or []
-            key = files[0] if files else t["id"]
-            self.file_tasks[key] = {"id": t["id"], "title": t.get("title", "")}
-            print(f"[keeper] Resumed task : {t['id']} — {t.get('title')}")
-
     def _ensure_file_task(self, file_path, change_type, branch):
         """Get or create a dedicated task for a single file."""
         if file_path in self.file_tasks:
@@ -432,6 +418,8 @@ class AgentKeeper:
 
         if not changed:
             return
+
+        self.last_change_ts = time.time()
 
         # Cap to 5 files per cycle to avoid task explosion
         MAX_FILES = 5
@@ -491,6 +479,10 @@ class AgentKeeper:
                 self._beat_mcp_agent()
                 # Sync git changes
                 self._sync_changes()
+                # If editing activity has stopped for a while, close the per-file tasks
+                if self.file_tasks and self.last_change_ts and (time.time() - self.last_change_ts) >= IDLE_CLOSE_SEC:
+                    self._complete_all_tasks("No new file changes detected")
+                    self.last_change_ts = 0.0
             except Exception as e:
                 print(f"[keeper] Loop error: {e}")
             time.sleep(POLL_SEC)
@@ -529,7 +521,6 @@ class AgentKeeper:
         else:
             print("[keeper] No MCP agent found yet — will discover once Claude starts")
 
-        self._resume_existing_tasks()
         self._watch_loop()
 
     def stop(self):

@@ -299,6 +299,44 @@ export class AgentRepository {
     }
   }
 
+  archive(id: string): void {
+    validateUUID(id, 'id');
+
+    try {
+      const db = getDatabase();
+      const existing = db.prepare('SELECT metadata FROM agents WHERE id = ?').get(id) as { metadata: string | null } | undefined;
+      if (!existing) {
+        throw new NotFoundError(`Agent not found: ${id}`, id);
+      }
+
+      const metadata = safeJsonParse<Record<string, any>>(existing.metadata) ?? {};
+      const result = db.prepare(`
+        UPDATE agents
+        SET status = ?, metadata = ?
+        WHERE id = ?
+      `).run(
+        'offline',
+        safeJsonStringify({
+          ...metadata,
+          archived: true,
+          hidden: true,
+          archivedAt: new Date().toISOString(),
+        }),
+        id
+      );
+
+      if (result.changes === 0) {
+        throw new NotFoundError(`Agent not found: ${id}`, id);
+      }
+    } catch (error) {
+      if (error instanceof NotFoundError) throw error;
+      throw new DatabaseError(
+        `Failed to archive agent ${id}`,
+        error instanceof Error ? error : undefined
+      );
+    }
+  }
+
   /**
    * Converts a database row to an Agent object.
    *

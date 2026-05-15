@@ -29,7 +29,9 @@ export class AgentRepository {
     `);
 
     const rows = stmt.all() as any[];
-    return rows.map(row => this.mapRowToAgentWithStats(row));
+    return rows
+      .map(row => this.mapRowToAgentWithStats(row))
+      .filter(agent => !this.isHidden(agent.metadata));
   }
 
   /**
@@ -61,37 +63,51 @@ export class AgentRepository {
    * Create or update an agent (upsert by name)
    */
   upsert(data: {
+    id?: string;
     name: string;
     type: string;
     status?: string;
     capabilities?: string[];
     maxConcurrentTasks?: number;
+    lastHeartbeat?: string | number;
+    metadata?: Record<string, unknown>;
   }): Agent {
-    const now = Date.now();
+    const now =
+      typeof data.lastHeartbeat === 'number'
+        ? data.lastHeartbeat
+        : data.lastHeartbeat
+          ? new Date(data.lastHeartbeat).getTime()
+          : Date.now();
+    const agentId = data.id;
 
-    // Check if agent with this name already exists
-    const existing = this.db.prepare('SELECT id FROM agents WHERE name = ?').get(data.name) as any;
-
-    if (existing) {
-      this.db.prepare(`
-        UPDATE agents SET
-          status = ?, last_heartbeat = ?, capabilities = ?
-        WHERE id = ?
-      `).run(
-        data.status || 'active',
-        now,
-        JSON.stringify(data.capabilities || []),
-        existing.id
-      );
-      return this.getById(existing.id)!;
+    if (agentId) {
+      const existing = this.db.prepare('SELECT id FROM agents WHERE id = ?').get(agentId) as any;
+      if (existing) {
+        this.db.prepare(`
+          UPDATE agents SET
+            name = ?, type = ?, status = ?, capabilities = ?, max_concurrent_tasks = ?,
+            last_heartbeat = ?, metadata = COALESCE(?, metadata)
+          WHERE id = ?
+        `).run(
+          data.name,
+          data.type,
+          data.status || 'active',
+          JSON.stringify(data.capabilities || []),
+          data.maxConcurrentTasks || 1,
+          now,
+          data.metadata ? JSON.stringify(data.metadata) : null,
+          agentId
+        );
+        return this.getById(agentId)!;
+      }
     }
 
-    const id = `agent-${now}-${Math.random().toString(36).slice(2, 9)}`;
+    const id = agentId || `agent-${now}-${Math.random().toString(36).slice(2, 9)}`;
 
     this.db.prepare(`
       INSERT INTO agents (id, name, type, status, capabilities, max_concurrent_tasks,
-        tasks_completed, tasks_in_progress, average_task_duration, success_rate, last_heartbeat)
-      VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 100, ?)
+        tasks_completed, tasks_in_progress, average_task_duration, success_rate, last_heartbeat, metadata)
+      VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 100, ?, ?)
     `).run(
       id,
       data.name,
@@ -99,7 +115,8 @@ export class AgentRepository {
       data.status || 'active',
       JSON.stringify(data.capabilities || []),
       data.maxConcurrentTasks || 1,
-      now
+      now,
+      data.metadata ? JSON.stringify(data.metadata) : null
     );
 
     return this.getById(id)!;
@@ -108,7 +125,12 @@ export class AgentRepository {
   /**
    * Update agent fields
    */
-  update(id: string, data: Partial<{ name: string; status: string; lastHeartbeat: string }>): void {
+  update(id: string, data: Partial<{ name: string; status: string; lastHeartbeat: string | number; metadata: Record<string, unknown> }>): void {
+    const existing = this.getById(id);
+    if (!existing) {
+      return;
+    }
+
     const fields: string[] = [];
     const values: any[] = [];
 
@@ -122,15 +144,59 @@ export class AgentRepository {
       fields.push('status = ?');
       values.push(data.status);
     }
-    if (data.lastHeartbeat) {
+    if (data.lastHeartbeat !== undefined) {
       fields.push('last_heartbeat = ?');
-      values.push(new Date(data.lastHeartbeat).getTime());
+      values.push(
+        typeof data.lastHeartbeat === 'number'
+          ? data.lastHeartbeat
+          : new Date(data.lastHeartbeat).getTime()
+      );
+    }
+    if (data.metadata) {
+      fields.push('metadata = ?');
+      values.push(JSON.stringify({ ...(existing.metadata || {}), ...data.metadata }));
     }
 
     if (fields.length > 0) {
       values.push(id);
-      this.db.prepare(`UPDATE agents SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+      this.db.prepare(`
+        UPDATE agents SET ${fields.join(', ')} WHERE id = ?
+      `).run(...values);
     }
+  }
+
+  /**
+   * Soft-delete an ended agent from the live pool.
+   */
+  archiveIfEnded(id: string): Agent | null {
+    const activeSession = this.db.prepare(`
+      SELECT 1
+      FROM sessions
+      WHERE agent_id = ? AND is_active = 1
+      LIMIT 1
+    `).get(id);
+
+    const unfinishedTask = this.db.prepare(`
+      SELECT 1
+      FROM agent_tasks
+      WHERE agent_id = ? AND status IN ('todo', 'claimed', 'in_progress', 'review')
+      LIMIT 1
+    `).get(id);
+
+    if (activeSession || unfinishedTask) {
+      return null;
+    }
+
+    this.update(id, {
+      status: 'offline',
+      metadata: {
+        archived: true,
+        hidden: true,
+        archivedAt: new Date().toISOString(),
+      },
+    });
+
+    return this.getById(id);
   }
 
   /**
@@ -159,7 +225,9 @@ export class AgentRepository {
     `);
 
     const rows = stmt.all(cutoffTime) as any[];
-    return rows.map(row => this.mapRowToAgentWithStats(row));
+    return rows
+      .map(row => this.mapRowToAgentWithStats(row))
+      .filter(agent => !this.isHidden(agent.metadata));
   }
 
   /**
@@ -284,6 +352,10 @@ export class AgentRepository {
       lastHeartbeat: new Date(row.lastHeartbeat),
       metadata: this.parseJson(row.metadata),
     };
+  }
+
+  private isHidden(metadata?: Record<string, unknown>): boolean {
+    return Boolean(metadata && metadata.hidden === true);
   }
 
   /**

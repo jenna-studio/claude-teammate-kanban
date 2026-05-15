@@ -578,7 +578,11 @@ Call update_task_progress when switching between files or finishing a significan
     if (session) {
       const otherSessions = this.getActiveSessionsForAgent(session.agentId);
       if (otherSessions.length === 0) {
-        this.agentRepo.updateStatus(session.agentId, AgentStatus.OFFLINE);
+        if (this.hasUnfinishedTasksForAgent(session.agentId)) {
+          this.agentRepo.updateStatus(session.agentId, AgentStatus.OFFLINE);
+        } else {
+          this.agentRepo.archive(session.agentId);
+        }
       }
       const agent = this.agentRepo.get(session.agentId);
       if (agent) {
@@ -664,6 +668,20 @@ Call update_task_progress when switching between files or finishing a significan
 
     if (task.agentId) this.agentRepo.updateHeartbeat(task.agentId);
 
+    const progressValue = typeof args.progress === 'number' ? args.progress : task.progress;
+    const shouldStartWork =
+      task.status === TaskStatus.CLAIMED ||
+      task.status === TaskStatus.TODO;
+    const shouldCompleteTask =
+      task.status !== TaskStatus.DONE &&
+      typeof progressValue === 'number' &&
+      progressValue >= 100;
+    const effectiveStatus = shouldCompleteTask
+      ? TaskStatus.DONE
+      : shouldStartWork
+        ? TaskStatus.IN_PROGRESS
+        : task.status;
+
     const updates: Partial<AgentTask> = {
       progress: args.progress,
       currentAction: args.currentAction,
@@ -671,8 +689,13 @@ Call update_task_progress when switching between files or finishing a significan
       linesChanged: args.linesChanged,
       tokensUsed: args.tokensUsed,
       codeChanges: args.codeChanges,
+      status: effectiveStatus,
       updatedAt: new Date(),
     };
+
+    if (effectiveStatus === TaskStatus.IN_PROGRESS && !task.startedAt) {
+      updates.startedAt = new Date();
+    }
 
     if (args.codeChanges && args.codeChanges.length > 0) {
       let totalInsertions = 0;
@@ -690,7 +713,27 @@ Call update_task_progress when switching between files or finishing a significan
       };
     }
 
+    if (effectiveStatus === TaskStatus.DONE && !task.completedAt) {
+      const completedAt = new Date();
+      const referenceTime = task.startedAt || updates.startedAt || task.claimedAt || task.createdAt;
+
+      updates.completedAt = completedAt;
+      updates.actualDuration = referenceTime
+        ? Math.floor((completedAt.getTime() - referenceTime.getTime()) / 1000)
+        : undefined;
+      updates.progress = 100;
+    }
+
     this.taskRepo.update(args.taskId, updates);
+
+    if (effectiveStatus === TaskStatus.DONE && task.status !== TaskStatus.DONE) {
+      this.sessionRepo.incrementTaskCompleted(task.sessionId);
+      this.agentRepo.incrementTasksCompleted(task.agentId);
+
+      if (args.tokensUsed) {
+        this.sessionRepo.addTokensUsed(task.sessionId, args.tokensUsed);
+      }
+    }
 
     const updatedTask = this.taskRepo.get(args.taskId);
     this.emit('task:updated', updatedTask);
@@ -704,6 +747,18 @@ Call update_task_progress when switching between files or finishing a significan
     if (!task) throw new Error(`Task not found: ${args.taskId}`);
 
     if (task.agentId) this.agentRepo.updateHeartbeat(task.agentId);
+
+    if (task.status === TaskStatus.DONE) {
+      if (args.tokensUsed) {
+        this.taskRepo.update(args.taskId, {
+          tokensUsed: args.tokensUsed,
+          updatedAt: new Date(),
+        });
+        this.sessionRepo.addTokensUsed(task.sessionId, args.tokensUsed);
+      }
+
+      return { status: 'done', actualDuration: task.actualDuration };
+    }
 
     const completedAt = new Date();
     const referenceTime = task.startedAt || task.claimedAt || task.createdAt;
@@ -893,6 +948,18 @@ Call update_task_progress when switching between files or finishing a significan
       return rows;
     } catch {
       return [];
+    }
+  }
+
+  private hasUnfinishedTasksForAgent(agentId: string): boolean {
+    try {
+      const db = getDatabase();
+      const row = db.prepare(
+        `SELECT 1 FROM agent_tasks WHERE agent_id = ? AND status IN ('todo', 'claimed', 'in_progress', 'review') LIMIT 1`
+      ).get(agentId);
+      return Boolean(row);
+    } catch {
+      return true;
     }
   }
 

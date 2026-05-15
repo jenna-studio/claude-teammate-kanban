@@ -311,6 +311,7 @@ export class TaskRepository {
   }): AgentTask {
     const id = this.generateId();
     const now = new Date().toISOString();
+    const initialStatus = data.status || (data.progress && data.progress > 0 ? 'in_progress' : 'todo');
 
     const stmt = this.db.prepare(`
       INSERT INTO agent_tasks (
@@ -341,7 +342,7 @@ export class TaskRepository {
       data.title,
       data.description || null,
       data.importance || 'medium',
-      data.status || 'pending',
+      initialStatus,
       data.agentId || 'unknown-agent',
       data.agentName || 'Unknown',
       data.agentType || 'unknown',
@@ -421,6 +422,36 @@ export class TaskRepository {
       }
     }
     if (data.progress !== undefined) {
+      let nextStatus = data.status;
+      if (!nextStatus) {
+        if (data.progress >= 100 && existing.status !== 'done') {
+          nextStatus = 'done';
+        } else if (
+          data.progress > 0 &&
+          (existing.status === 'todo' || existing.status === 'claimed')
+        ) {
+          nextStatus = 'in_progress';
+        }
+      }
+
+      if (nextStatus && nextStatus !== data.status) {
+        updates.push('status = ?');
+        values.push(nextStatus);
+
+        if (nextStatus === 'claimed' && !existing.claimedAt) {
+          updates.push('claimed_at = ?');
+          values.push(new Date().toISOString());
+        }
+        if (nextStatus === 'in_progress' && !existing.startedAt) {
+          updates.push('started_at = ?');
+          values.push(new Date().toISOString());
+        }
+        if (nextStatus === 'done' && !existing.completedAt) {
+          updates.push('completed_at = ?');
+          values.push(new Date().toISOString());
+        }
+      }
+
       updates.push('progress = ?');
       values.push(data.progress);
     }
